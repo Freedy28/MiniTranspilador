@@ -956,31 +956,24 @@
     ]
   },
   "packageFolders": {
-    "C:\\Users\\Dell\\.nuget\\packages\\": {},
-    "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages": {}
+    "C:\\Users\\fredy\\.nuget\\packages\\": {}
   },
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\Dell\\OneDrive - Instituto Politecnico Nacional\\TT\\MiniTranspilador\\MiniTranspilador.csproj",
+      "projectUniqueName": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\MiniTranspilador.csproj",
       "projectName": "MiniTranspilador",
-      "projectPath": "C:\\Users\\Dell\\OneDrive - Instituto Politecnico Nacional\\TT\\MiniTranspilador\\MiniTranspilador.csproj",
-      "packagesPath": "C:\\Users\\Dell\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\Dell\\OneDrive - Instituto Politecnico Nacional\\TT\\MiniTranspilador\\obj\\",
+      "projectPath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\MiniTranspilador.csproj",
+      "packagesPath": "C:\\Users\\fredy\\.nuget\\packages\\",
+      "outputPath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\obj\\",
       "projectStyle": "PackageReference",
-      "fallbackFolders": [
-        "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
-      ],
       "configFilePaths": [
-        "C:\\Users\\Dell\\AppData\\Roaming\\NuGet\\NuGet.Config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
-        "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"
+        "C:\\Users\\fredy\\AppData\\Roaming\\NuGet\\NuGet.Config"
       ],
       "originalTargetFrameworks": [
         "net9.0"
       ],
       "sources": {
-        "C:\\Program Files (x86)\\Microsoft SDKs\\NuGetPackages\\": {},
         "https://api.nuget.org/v3/index.json": {}
       },
       "frameworks": {
@@ -1026,7 +1019,7 @@
             "privateAssets": "all"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.304/PortableRuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
       }
     }
   }
