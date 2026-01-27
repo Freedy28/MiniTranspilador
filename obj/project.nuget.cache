@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "84nwagA28nE=",
+  "dgSpecHash": "WrBklsNbsWU=",
   "success": true,
-  "projectFilePath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\MiniTranspilador.csproj",
+  "projectFilePath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\Transpilador.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\fredy\\.nuget\\packages\\microsoft.codeanalysis.analyzers\\3.3.4\\microsoft.codeanalysis.analyzers.3.3.4.nupkg.sha512",
     "C:\\Users\\fredy\\.nuget\\packages\\microsoft.codeanalysis.common\\4.10.0\\microsoft.codeanalysis.common.4.10.0.nupkg.sha512",

@@ -10,12 +10,12 @@
 using System;
 using System.Reflection;
 
-[assembly: System.Reflection.AssemblyCompanyAttribute("MiniTranspilador")]
+[assembly: System.Reflection.AssemblyCompanyAttribute("Transpilador")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
 [assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+3d742daff49da744e29a0e581272e2a3456e268a")]
-[assembly: System.Reflection.AssemblyProductAttribute("MiniTranspilador")]
-[assembly: System.Reflection.AssemblyTitleAttribute("MiniTranspilador")]
+[assembly: System.Reflection.AssemblyProductAttribute("Transpilador")]
+[assembly: System.Reflection.AssemblyTitleAttribute("Transpilador")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
 
 // Generado por la clase WriteCodeFragment de MSBuild.

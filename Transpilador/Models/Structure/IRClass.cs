@@ -1,0 +1,16 @@
+using System.Collections.Generic;
+
+namespace Transpilador.Models.Structure
+{
+    public class IRClass
+    {
+        public string Name { get; set; }
+        public List<IRMethod> Methods { get; set; }
+
+        public IRClass(string name)
+        {
+            Name = name;
+            Methods = new List<IRMethod>();
+        }
+    }
+}

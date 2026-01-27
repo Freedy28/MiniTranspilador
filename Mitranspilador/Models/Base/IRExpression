@@ -1,8 +1,0 @@
-
-using System.Diagnostics.Contracts;
-namespace MiniTranspilador.Models.Expression
-{
-public abstract class IRExpression {
-        public abstract string Type { get; }
-    }
-}

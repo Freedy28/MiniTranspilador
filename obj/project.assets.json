@@ -961,9 +961,9 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\MiniTranspilador.csproj",
-      "projectName": "MiniTranspilador",
-      "projectPath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\MiniTranspilador.csproj",
+      "projectUniqueName": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\Transpilador.csproj",
+      "projectName": "Transpilador",
+      "projectPath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\Transpilador.csproj",
       "packagesPath": "C:\\Users\\fredy\\.nuget\\packages\\",
       "outputPath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\obj\\",
       "projectStyle": "PackageReference",
