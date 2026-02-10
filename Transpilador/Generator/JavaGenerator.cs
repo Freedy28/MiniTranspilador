@@ -1,4 +1,5 @@
 using System;
+using System.Linq;
 using System.Text;
 using Transpilador.Models;
 using Transpilador.Models.Base;
@@ -8,124 +9,365 @@ using Transpilador.Models.Structure;
 
 namespace Transpilador.Generator
 {
-    public class JavaGenerator
+    /// <summary>
+    /// Generates Java code from IR using the Visitor pattern.
+    /// Implements IIRVisitor to traverse and transform IR nodes into Java code.
+    /// </summary>
+    public class JavaGenerator : IIRVisitor<string>
     {
         private StringBuilder _sb = new StringBuilder();
         private int _indentLevel;
 
-        public string GenerateJava(IRProgram program)
+        /// <summary>
+        /// Main entry point: Generates Java code from an IR program.
+        /// </summary>
+        public string Generate(IRProgram program)
         {
             _sb = new StringBuilder();
             _indentLevel = 0;
+            return program.Accept(this);
+        }
 
-            // Package (si hay namespace)
+        #region Structure Visitors
+
+        public string VisitProgram(IRProgram program)
+        {
+            // Package (if namespace exists)
             if (!string.IsNullOrEmpty(program.Namespace))
             {
                 WriteLine($"package {program.Namespace.ToLower()};");
                 WriteLine();
             }
 
-            // Clases
+            // Generate classes
             foreach (var irClass in program.Classes)
             {
-                GenerateClass(irClass);
+                irClass.Accept(this);
             }
 
             return _sb.ToString();
         }
 
-        private void GenerateClass(IRClass irClass)
+        public string VisitClass(IRClass irClass)
         {
             WriteLine($"public class {irClass.Name} {{");
             Indent();
 
             foreach (var method in irClass.Methods)
             {
-                GenerateMethod(method);
+                method.Accept(this);
                 WriteLine();
             }
 
             Unindent();
             WriteLine("}");
+
+            return "";
         }
 
-        private void GenerateMethod(IRMethod method)
+        public string VisitMethod(IRMethod method)
         {
             var returnType = MapTypeToJava(method.ReturnType);
-            WriteLine($"public {returnType} {method.Name}() {{");
+            
+            // Build parameter list
+            var parameters = string.Join(", ", method.Parameters
+                .Select(p => $"{MapTypeToJava(p.Type)} {p.Name}"));
+
+            WriteLine($"public {returnType} {method.Name}({parameters}) {{");
             Indent();
 
-            // Declaraciones de variables
-            foreach (var stmt in method.Statements)
-            {
-                GenerateVariableDeclaration(stmt);
-            }
-
-            // Asignaciones
-            foreach (var assignment in method.Assignments)
-            {
-                GenerateAssignment(assignment);
-            }
-
-            // Return
-            if (method.ReturnExpression != null)
-            {
-                Write("return ");
-                GenerateExpression(method.ReturnExpression);
-                WriteLine(";");
-            }
+            // Visit method body
+            method.Body.Accept(this);
 
             Unindent();
             WriteLine("}");
+
+            return "";
         }
 
-        private void GenerateVariableDeclaration(IRVariableDeclaration decl)
+        public string VisitParameter(IRParameter parameter)
         {
-            var type = MapTypeToJava(decl.Type);
-            Write($"{type} {decl.Name}");
+            return $"{MapTypeToJava(parameter.Type)} {parameter.Name}";
+        }
+
+        #endregion
+
+        #region Statement Visitors
+
+        public string VisitBlock(IRBlock block)
+        {
+            foreach (var statement in block.Statements)
+            {
+                statement.Accept(this);
+            }
+            return "";
+        }
+
+        public string VisitVariableDeclaration(IRVariableDeclaration declaration)
+        {
+            var type = MapTypeToJava(declaration.Type);
+            Write($"{type} {declaration.Name}");
             
-            if (decl.InitialValue != null)
+            if (declaration.InitialValue != null)
             {
                 Write(" = ");
-                GenerateExpression(decl.InitialValue);
+                Write(declaration.InitialValue.Accept(this));
             }
             
             WriteLine(";");
+            return "";
         }
 
-        private void GenerateAssignment(IRAssignment assignment)
+        public string VisitAssignment(IRAssignment assignment)
         {
             Write($"{assignment.VariableName} = ");
-            GenerateExpression(assignment.Value);
+            Write(assignment.Value.Accept(this));
             WriteLine(";");
+            return "";
         }
 
-        private void GenerateExpression(IRExpression expression)
+        public string VisitReturnStatement(IRReturnStatement returnStatement)
         {
-            switch (expression)
+            Write("return");
+            if (returnStatement.Expression != null)
             {
-                case IRLiteral literal:
-                    Write(literal.Value.ToString());
-                    break;
-                
-                case IRVariable variable:
-                    Write(variable.Name);
-                    break;
-                
-                case IRBinaryOperation binary:
-                    GenerateBinaryOperation(binary);
-                    break;
+                Write(" ");
+                Write(returnStatement.Expression.Accept(this));
+            }
+            WriteLine(";");
+            return "";
+        }
+
+        public string VisitExpressionStatement(IRExpressionStatement expressionStatement)
+        {
+            Write(expressionStatement.Expression.Accept(this));
+            WriteLine(";");
+            return "";
+        }
+
+        public string VisitIfStatement(IRIfStatement ifStatement)
+        {
+            Write("if (");
+            Write(ifStatement.Condition.Accept(this));
+            Write(") ");
+
+            // Handle block vs single statement
+            if (ifStatement.ThenBranch is IRBlock)
+            {
+                WriteLine("{");
+                Indent();
+                ifStatement.ThenBranch.Accept(this);
+                Unindent();
+                Write("}");
+            }
+            else
+            {
+                WriteLine();
+                Indent();
+                ifStatement.ThenBranch.Accept(this);
+                Unindent();
+            }
+
+            // Handle else clause
+            if (ifStatement.ElseBranch != null)
+            {
+                WriteLine();
+                Write("else ");
+
+                if (ifStatement.ElseBranch is IRBlock)
+                {
+                    WriteLine("{");
+                    Indent();
+                    ifStatement.ElseBranch.Accept(this);
+                    Unindent();
+                    WriteLine("}");
+                }
+                else if (ifStatement.ElseBranch is IRIfStatement)
+                {
+                    // else if case
+                    ifStatement.ElseBranch.Accept(this);
+                }
+                else
+                {
+                    WriteLine();
+                    Indent();
+                    ifStatement.ElseBranch.Accept(this);
+                    Unindent();
+                }
+            }
+            else
+            {
+                WriteLine();
+            }
+
+            return "";
+        }
+
+        public string VisitWhileLoop(IRWhileLoop whileLoop)
+        {
+            Write("while (");
+            Write(whileLoop.Condition.Accept(this));
+            Write(") ");
+
+            if (whileLoop.Body is IRBlock)
+            {
+                WriteLine("{");
+                Indent();
+                whileLoop.Body.Accept(this);
+                Unindent();
+                WriteLine("}");
+            }
+            else
+            {
+                WriteLine();
+                Indent();
+                whileLoop.Body.Accept(this);
+                Unindent();
+            }
+
+            return "";
+        }
+
+        public string VisitForLoop(IRForLoop forLoop)
+        {
+            Write("for (");
+
+            // Initializers
+            for (int i = 0; i < forLoop.Initializers.Count; i++)
+            {
+                var init = forLoop.Initializers[i];
+                if (init is IRVariableDeclaration varDecl)
+                {
+                    var type = MapTypeToJava(varDecl.Type);
+                    Write($"{type} {varDecl.Name}");
+                    if (varDecl.InitialValue != null)
+                    {
+                        Write(" = ");
+                        Write(varDecl.InitialValue.Accept(this));
+                    }
+                }
+                else if (init is IRAssignment assignment)
+                {
+                    Write($"{assignment.VariableName} = ");
+                    Write(assignment.Value.Accept(this));
+                }
+
+                if (i < forLoop.Initializers.Count - 1)
+                {
+                    Write(", ");
+                }
+            }
+
+            Write("; ");
+
+            // Condition
+            if (forLoop.Condition != null)
+            {
+                Write(forLoop.Condition.Accept(this));
+            }
+
+            Write("; ");
+
+            // Incrementors
+            for (int i = 0; i < forLoop.Incrementors.Count; i++)
+            {
+                Write(forLoop.Incrementors[i].Accept(this));
+                if (i < forLoop.Incrementors.Count - 1)
+                {
+                    Write(", ");
+                }
+            }
+
+            Write(") ");
+
+            if (forLoop.Body is IRBlock)
+            {
+                WriteLine("{");
+                Indent();
+                forLoop.Body.Accept(this);
+                Unindent();
+                WriteLine("}");
+            }
+            else
+            {
+                WriteLine();
+                Indent();
+                forLoop.Body.Accept(this);
+                Unindent();
+            }
+
+            return "";
+        }
+
+        #endregion
+
+        #region Expression Visitors
+
+        public string VisitLiteral(IRLiteral literal)
+        {
+            return literal.Value.ToString() ?? "";
+        }
+
+        public string VisitVariable(IRVariable variable)
+        {
+            return variable.Name;
+        }
+
+        public string VisitBinaryOperation(IRBinaryOperation binaryOperation)
+        {
+            var left = binaryOperation.Left.Accept(this);
+            var right = binaryOperation.Right.Accept(this);
+            var op = binaryOperation.Operation.ToJavaSymbol();
+            
+            return $"({left} {op} {right})";
+        }
+
+        public string VisitUnaryOperation(IRUnaryOperation unaryOperation)
+        {
+            var operand = unaryOperation.Operand.Accept(this);
+            var op = unaryOperation.Operation.ToJavaSymbol();
+
+            if (unaryOperation.IsPrefix)
+            {
+                // Prefix: ++x, --x, -x, !x
+                return $"{op}{operand}";
+            }
+            else
+            {
+                // Postfix: x++, x--
+                return $"{operand}{op}";
             }
         }
 
-        private void GenerateBinaryOperation(IRBinaryOperation binary)
+        public string VisitMethodCall(IRMethodCall methodCall)
         {
-            Write("(");
-            GenerateExpression(binary.Left);
-            Write($" {binary.Operation.ToJavaSymbol()} ");
-            GenerateExpression(binary.Right);
-            Write(")");
+            var result = new StringBuilder();
+
+            if (methodCall.Target != null)
+            {
+                result.Append(methodCall.Target.Accept(this));
+                result.Append(".");
+            }
+
+            result.Append(methodCall.MethodName);
+            result.Append("(");
+
+            for (int i = 0; i < methodCall.Arguments.Count; i++)
+            {
+                result.Append(methodCall.Arguments[i].Accept(this));
+                if (i < methodCall.Arguments.Count - 1)
+                {
+                    result.Append(", ");
+                }
+            }
+
+            result.Append(")");
+            return result.ToString();
         }
+
+        #endregion
+
+        #region Utility Methods
 
         private string MapTypeToJava(string csharpType)
         {
@@ -142,7 +384,6 @@ namespace Transpilador.Generator
             };
         }
 
-        // Métodos de utilidad para formatear
         private void WriteLine(string text = "")
         {
             if (!string.IsNullOrEmpty(text))
@@ -163,5 +404,7 @@ namespace Transpilador.Generator
 
         private void Indent() => _indentLevel++;
         private void Unindent() => _indentLevel = Math.Max(0, _indentLevel - 1);
+
+        #endregion
     }
 }

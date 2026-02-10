@@ -10,7 +10,8 @@ namespace Transpilador
         static void Main(string[] args)
         {
             Console.WriteLine("=== Mini Transpilador C# -> Java ===");
-            Console.WriteLine("Soporta: suma, resta, multiplicación y división\n");
+            Console.WriteLine("Arquitectura: C# → Roslyn → IR → Visitor → Java");
+            Console.WriteLine("Soporta: operaciones aritméticas, comparaciones, if/else, for, while\n");
 
             // DEPURACIÓN: Mostrar argumentos recibidos
             Console.WriteLine($"🔍 Argumentos recibidos: {args.Length}");
@@ -98,11 +99,16 @@ namespace Transpilador
                 Console.WriteLine(sourceCode);
                 Console.WriteLine();
 
-                var parser = new CSharpParser();
-                var ir = parser.ParseToIR(sourceCode);
+                Console.WriteLine("⚙️  Paso 1: Construyendo IR desde código C#...");
+                var ir = RoslynIRBuilder.BuildIR(sourceCode);
+                Console.WriteLine("✅ IR construido exitosamente");
+                Console.WriteLine();
 
+                Console.WriteLine("⚙️  Paso 2: Generando código Java desde IR...");
                 var generator = new JavaGenerator();
-                var javaCode = generator.GenerateJava(ir);
+                var javaCode = generator.Generate(ir);
+                Console.WriteLine("✅ Código Java generado exitosamente");
+                Console.WriteLine();
 
                 Console.WriteLine("☕ Java Transpilado:");
                 Console.WriteLine("===================");
@@ -119,9 +125,12 @@ namespace Transpilador
             catch (Exception ex)
             {
                 Console.WriteLine($"❌ Error: {ex.Message}");
+                Console.WriteLine($"💡 Tipo: {ex.GetType().Name}");
+                Console.WriteLine($"💡 Stack trace:");
+                Console.WriteLine(ex.StackTrace);
                 if (ex.InnerException != null)
                 {
-                    Console.WriteLine($"💡 Detalle: {ex.InnerException.Message}");
+                    Console.WriteLine($"💡 Inner exception: {ex.InnerException.Message}");
                 }
             }
         }
@@ -138,10 +147,28 @@ class Calculator
         int a = 10;
         int b = 5;
         int suma = a + b;
-        int resta = a - b;
-        int multiplicacion = a * b;
-        int division = a / b;
-        return suma + resta * multiplicacion - division;
+        
+        if (suma > 10)
+        {
+            suma = suma * 2;
+        }
+        else
+        {
+            suma = suma + 1;
+        }
+        
+        for (int i = 0; i < 3; i++)
+        {
+            suma = suma + i;
+        }
+        
+        int counter = 0;
+        while (counter < 5)
+        {
+            counter++;
+        }
+        
+        return suma;
     }
 }";
         }
