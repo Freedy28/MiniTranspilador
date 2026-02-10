@@ -1,45 +1,90 @@
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.csproj.AssemblyReference.cache
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.AssemblyInfoInputs.cache
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.AssemblyInfo.cs
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.csproj.CoreCompileInputs.cache
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.sourcelink.json
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\Transpilador.exe
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\Transpilador.deps.json
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\Transpilador.runtimeconfig.json
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\Transpilador.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\Transpilador.pdb
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\Microsoft.CodeAnalysis.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\Microsoft.CodeAnalysis.CSharp.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\cs\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\de\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\es\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\fr\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\it\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\ja\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\ko\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\pl\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\pt-BR\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\ru\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\cs\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\de\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\es\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\fr\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\it\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\ja\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\ko\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\pl\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\pt-BR\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\ru\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\tr\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\zh-Hans\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\bin\Debug\net9.0\zh-Hant\Microsoft.CodeAnalysis.CSharp.resources.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpil.56DEF942.Up2Date
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\refint\Transpilador.dll
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.pdb
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\Transpilador.genruntimeconfig.cache
-C:\Users\fredy\OneDrive - Instituto Politecnico Nacional\Documents\MiniTranspilador\obj\Debug\net9.0\ref\Transpilador.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.csproj.AssemblyReference.cache
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.GeneratedMSBuildEditorConfig.editorconfig
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.AssemblyInfoInputs.cache
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.AssemblyInfo.cs
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.csproj.CoreCompileInputs.cache
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.sourcelink.json
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/Transpilador.exe
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/Transpilador.deps.json
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/Transpilador.runtimeconfig.json
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/Transpilador.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/Transpilador.pdb
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/Microsoft.CodeAnalysis.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/Microsoft.CodeAnalysis.CSharp.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpil.56DEF942.Up2Date
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/refint/Transpilador.dll
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.pdb
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/Transpilador.genruntimeconfig.cache
+C:/Users/fredy/OneDrive - Instituto Politecnico Nacional/Documents/MiniTranspilador/obj/Debug/net9.0/ref/Transpilador.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/Transpilador
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/Transpilador.deps.json
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/Transpilador.runtimeconfig.json
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/Transpilador.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/Transpilador.pdb
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/Microsoft.CodeAnalysis.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/Microsoft.CodeAnalysis.CSharp.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/cs/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/de/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/es/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/fr/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/it/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/ja/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/ko/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/pl/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/pt-BR/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/ru/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/tr/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/zh-Hans/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/bin/Debug/net9.0/zh-Hant/Microsoft.CodeAnalysis.CSharp.resources.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.csproj.AssemblyReference.cache
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.GeneratedMSBuildEditorConfig.editorconfig
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.AssemblyInfoInputs.cache
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.AssemblyInfo.cs
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.csproj.CoreCompileInputs.cache
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.sourcelink.json
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpil.56DEF942.Up2Date
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/refint/Transpilador.dll
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.pdb
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/Transpilador.genruntimeconfig.cache
+/home/runner/work/MiniTranspilador/MiniTranspilador/obj/Debug/net9.0/ref/Transpilador.dll

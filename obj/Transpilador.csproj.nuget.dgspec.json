@@ -1,20 +1,20 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\Transpilador.csproj": {}
+    "/home/runner/work/MiniTranspilador/MiniTranspilador/Transpilador.csproj": {}
   },
   "projects": {
-    "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\Transpilador.csproj": {
+    "/home/runner/work/MiniTranspilador/MiniTranspilador/Transpilador.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\Transpilador.csproj",
+        "projectUniqueName": "/home/runner/work/MiniTranspilador/MiniTranspilador/Transpilador.csproj",
         "projectName": "Transpilador",
-        "projectPath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\Transpilador.csproj",
-        "packagesPath": "C:\\Users\\fredy\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\fredy\\OneDrive - Instituto Politecnico Nacional\\Documents\\MiniTranspilador\\obj\\",
+        "projectPath": "/home/runner/work/MiniTranspilador/MiniTranspilador/Transpilador.csproj",
+        "packagesPath": "/home/runner/.nuget/packages/",
+        "outputPath": "/home/runner/work/MiniTranspilador/MiniTranspilador/obj/",
         "projectStyle": "PackageReference",
         "configFilePaths": [
-          "C:\\Users\\fredy\\AppData\\Roaming\\NuGet\\NuGet.Config"
+          "/home/runner/.nuget/NuGet/NuGet.Config"
         ],
         "originalTargetFrameworks": [
           "net9.0"
@@ -38,7 +38,7 @@
           "auditLevel": "low",
           "auditMode": "direct"
         },
-        "SdkAnalysisLevel": "9.0.300"
+        "SdkAnalysisLevel": "10.0.100"
       },
       "frameworks": {
         "net9.0": {
@@ -65,7 +65,7 @@
               "privateAssets": "all"
             }
           },
-          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\9.0.306/PortableRuntimeIdentifierGraph.json"
+          "runtimeIdentifierGraphPath": "/usr/share/dotnet/sdk/10.0.102/PortableRuntimeIdentifierGraph.json"
         }
       }
     }
