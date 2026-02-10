@@ -283,9 +283,17 @@ namespace Transpilador.Transforms
                     return new IRLiteral(result.ToString(), "double");
                 }
             }
-            catch
+            catch (DivideByZeroException)
             {
-                // If folding fails, return null to keep the original operation
+                // Cannot fold division by zero
+            }
+            catch (OverflowException)
+            {
+                // Cannot fold operation that would overflow
+            }
+            catch (NotSupportedException)
+            {
+                // Operation not supported for constant folding
             }
 
             return null;
@@ -312,9 +320,9 @@ namespace Transpilador.Transforms
                     return operand;
                 }
             }
-            catch
+            catch (OverflowException)
             {
-                // If folding fails, return null
+                // Cannot fold operation that would overflow
             }
 
             return null;
