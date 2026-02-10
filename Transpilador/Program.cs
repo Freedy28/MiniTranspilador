@@ -2,6 +2,8 @@
 using System.IO;
 using Transpilador.Parser;
 using Transpilador.Generator;
+using Transpilador.Utilities;
+using Transpilador.Transforms;
 
 namespace Transpilador
 {
@@ -104,9 +106,15 @@ namespace Transpilador
                 Console.WriteLine("✅ IR construido exitosamente");
                 Console.WriteLine();
 
-                Console.WriteLine("⚙️  Paso 2: Generando código Java desde IR...");
+                Console.WriteLine("⚙️  Paso 2: Optimizando IR (constant folding)...");
+                var optimizer = new ConstantFolder();
+                var optimizedIr = optimizer.Optimize(ir);
+                Console.WriteLine("✅ IR optimizado");
+                Console.WriteLine();
+
+                Console.WriteLine("⚙️  Paso 3: Generando código Java desde IR...");
                 var generator = new JavaGenerator();
-                var javaCode = generator.Generate(ir);
+                var javaCode = generator.Generate(optimizedIr);
                 Console.WriteLine("✅ Código Java generado exitosamente");
                 Console.WriteLine();
 
