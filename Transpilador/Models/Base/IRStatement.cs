@@ -1,6 +1,9 @@
 namespace Transpilador.Models.Base
 {
-    public abstract class IRStatement
+    /// <summary>
+    /// Base class for all IR statements (nodes that perform actions but don't produce values).
+    /// </summary>
+    public abstract class IRStatement : IRNode
     {
     }
 }

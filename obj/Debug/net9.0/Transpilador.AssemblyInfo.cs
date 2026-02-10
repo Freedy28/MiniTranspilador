@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Transpilador")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+54033125b95586e8026515375dc1b36bb6e65f4a")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+bc771df4c94a0e585e8ec51887275f861004b478")]
 [assembly: System.Reflection.AssemblyProductAttribute("Transpilador")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Transpilador")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

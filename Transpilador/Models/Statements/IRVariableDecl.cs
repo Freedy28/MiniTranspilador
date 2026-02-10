@@ -16,5 +16,10 @@ namespace Transpilador.Models.Statements
             Type = type;
             InitialValue = initialValue;
         }
+
+        public override T Accept<T>(IIRVisitor<T> visitor)
+        {
+            return visitor.VisitVariableDeclaration(this);
+        }
     }
 }

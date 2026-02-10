@@ -1,8 +1,9 @@
 using System.Collections.Generic;
+using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Structure
 {
-    public class IRProgram
+    public class IRProgram : IRNode
     {
         public List<IRClass> Classes { get; set; }
         public string Namespace { get; set; }
@@ -11,6 +12,11 @@ namespace Transpilador.Models.Structure
         {
             Classes = new List<IRClass>();
             Namespace = "";
+        }
+
+        public override T Accept<T>(IIRVisitor<T> visitor)
+        {
+            return visitor.VisitProgram(this);
         }
     }
 }

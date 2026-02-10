@@ -4,20 +4,24 @@ using Transpilador.Models.Statements;
 
 namespace Transpilador.Models.Structure
 {
-    public class IRMethod
+    public class IRMethod : IRNode
     {
         public string Name { get; set; }
         public string ReturnType { get; set; }
-        public List<IRVariableDeclaration> Statements { get; set; }
-        public List<IRAssignment> Assignments { get; set; }
-        public IRExpression? ReturnExpression { get; set; }
+        public List<IRParameter> Parameters { get; set; }
+        public IRBlock Body { get; set; }
 
         public IRMethod(string name, string returnType)
         {
             Name = name;
             ReturnType = returnType;
-            Statements = new List<IRVariableDeclaration>();
-            Assignments = new List<IRAssignment>();
+            Parameters = new List<IRParameter>();
+            Body = new IRBlock();
+        }
+
+        public override T Accept<T>(IIRVisitor<T> visitor)
+        {
+            return visitor.VisitMethod(this);
         }
     }
 }

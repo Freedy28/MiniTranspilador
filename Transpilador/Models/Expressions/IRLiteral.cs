@@ -12,5 +12,10 @@ namespace Transpilador.Models.Expressions
             Value = value;
             Type = type;
         }
+
+        public override T Accept<T>(IIRVisitor<T> visitor)
+        {
+            return visitor.VisitLiteral(this);
+        }
     }
 }

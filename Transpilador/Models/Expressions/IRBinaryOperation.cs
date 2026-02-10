@@ -17,5 +17,10 @@ namespace Transpilador.Models.Expressions
             Operation = operation;
             Type = type;
         }
+
+        public override T Accept<T>(IIRVisitor<T> visitor)
+        {
+            return visitor.VisitBinaryOperation(this);
+        }
     }
 }
