@@ -110,7 +110,7 @@ namespace Transpilador.Parser
                 var value = ParseExpression(assignment.Right);
 
                 var irAssignment = new IRAssignment(variableName, value);
-                _currentMethod.Body.Add(irAssignment);  // ✅ A Body, no a Assignments
+                _currentMethod.Body.Add(irAssignment);
             }
 
             base.VisitExpressionStatement(node);

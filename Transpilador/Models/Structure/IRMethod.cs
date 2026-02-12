@@ -8,12 +8,13 @@ namespace Transpilador.Models.Structure
         public string Name { get; set; }
         public string ReturnType { get; set; }
         public List<IRStatement> Body { get; set; }
-        public IRExpression? ReturnExpression { get; set; }
+        public IRExpression ReturnExpression { get; set; }
         public IRMethod(string name, string returnType)
         {
             Name = name;
             ReturnType = returnType;
             Body = new List<IRStatement>();            
+            ReturnExpression = null;
         }
     }
 }

@@ -1,5 +1,6 @@
 using System;
 using System.Text;
+using Transpilador.Generator.Base;
 using Transpilador.Models;
 using Transpilador.Models.Base;
 using Transpilador.Models.Expressions;
@@ -8,64 +9,53 @@ using Transpilador.Models.Structure;
 
 namespace Transpilador.Generator
 {
-    public class JavaGenerator
+
+    public class JavaGenerator : IRWalker
     {
         private StringBuilder _sb = new StringBuilder();
         private int _indentLevel;
 
         public string GenerateJava(IRProgram program)
         {
-            _sb = new StringBuilder();
+            _sb.Clear();
             _indentLevel = 0;
 
-            // Package (si hay namespace)
             if (!string.IsNullOrEmpty(program.Namespace))
             {
                 WriteLine($"package {program.Namespace.ToLower()};");
                 WriteLine();
             }
 
-            // Clases
-            foreach (var irClass in program.Classes)
-            {
-                GenerateClass(irClass);
-            }
+            VisitProgram(program);
 
             return _sb.ToString();
         }
 
-        private void GenerateClass(IRClass irClass)
+        public override void VisitClass(IRClass irClass)
         {
+
             WriteLine($"public class {irClass.Name} {{");
             Indent();
 
-            foreach (var method in irClass.Methods)
-            {
-                GenerateMethod(method);
-                WriteLine();
-            }
-
-            
+            base.VisitClass(irClass);
 
             Unindent();
             WriteLine("}");
+            WriteLine();
         }
 
-        private void GenerateMethod(IRMethod method)
+        public override void VisitMethod(IRMethod method)
         {
             var returnType = MapTypeToJava(method.ReturnType);
             WriteLine($"public {returnType} {method.Name}() {{");
             Indent();
 
-            // Declaraciones de variables
-            foreach (var stmt in method.Body)
-            {
-                GenerateStatement(stmt);
-            }
+            base.VisitMethod(method);
+
             if (method.ReturnExpression != null)
             {
                 Write("return ");
-                GenerateExpression(method.ReturnExpression);
+                GenerateExpression(method.ReturnExpression); 
                 WriteLine(";");
             }
             
@@ -73,22 +63,7 @@ namespace Transpilador.Generator
             WriteLine("}"); 
         }
 
-            // Asignaciones
-        private void GenerateStatement(IRStatement statement)
-        {
-            switch (statement)
-            {
-                case IRVariableDeclaration decl:
-                    GenerateVariableDeclaration(decl);
-                    break;
-                
-                case IRAssignment assignment:
-                    GenerateAssignment(assignment);
-                    break;
-            }
-        }
-
-        private void GenerateVariableDeclaration(IRVariableDeclaration decl)
+        protected override void VisitVariableDeclaration(IRVariableDeclaration decl)
         {
             var type = MapTypeToJava(decl.Type);
             Write($"{type} {decl.Name}");
@@ -98,17 +73,16 @@ namespace Transpilador.Generator
                 Write(" = ");
                 GenerateExpression(decl.InitialValue);
             }
-            
             WriteLine(";");
         }
 
-        private void GenerateAssignment(IRAssignment assignment)
+        protected override void VisitAssignment(IRAssignment assignment)
         {
             Write($"{assignment.VariableName} = ");
             GenerateExpression(assignment.Value);
             WriteLine(";");
         }
-
+        
         private void GenerateExpression(IRExpression expression)
         {
             switch (expression)
@@ -116,11 +90,9 @@ namespace Transpilador.Generator
                 case IRLiteral literal:
                     Write(literal.Value.ToString());
                     break;
-                
                 case IRVariable variable:
                     Write(variable.Name);
                     break;
-                
                 case IRBinaryOperation binary:
                     GenerateBinaryOperation(binary);
                     break;
@@ -151,13 +123,9 @@ namespace Transpilador.Generator
             };
         }
 
-        // Métodos de utilidad para formatear
         private void WriteLine(string text = "")
         {
-            if (!string.IsNullOrEmpty(text))
-            {
-                Write(text);
-            }
+            if (!string.IsNullOrEmpty(text)) Write(text);
             _sb.AppendLine();
         }
 
