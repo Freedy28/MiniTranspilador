@@ -129,20 +129,13 @@ namespace Transpilador
         private static string GetDefaultCode()
         {
             return @"
-using System;
-
-class Calculator
-{
-    public int Calculate()
-    {
-        int a = 10;
-        int b = 5;
-        int suma = a + b;
-        int resta = a - b;
-        int multiplicacion = a * b;
-        int division = a / b;
-        return suma + resta * multiplicacion - division;
-    }
+public int Calculate() {
+    int a = 10;           // 1. Declaración
+    int b = 5;            // 2. Declaración
+    int suma = a + b;     // 3. Declaración
+    suma = suma + 1;      // 4. Asignación
+    int resta = a - b;    // 5. Declaración
+    return suma;
 }";
         }
     }

@@ -45,6 +45,8 @@ namespace Transpilador.Generator
                 WriteLine();
             }
 
+            
+
             Unindent();
             WriteLine("}");
         }
@@ -56,27 +58,34 @@ namespace Transpilador.Generator
             Indent();
 
             // Declaraciones de variables
-            foreach (var stmt in method.Statements)
+            foreach (var stmt in method.Body)
             {
-                GenerateVariableDeclaration(stmt);
+                GenerateStatement(stmt);
             }
-
-            // Asignaciones
-            foreach (var assignment in method.Assignments)
-            {
-                GenerateAssignment(assignment);
-            }
-
-            // Return
             if (method.ReturnExpression != null)
             {
                 Write("return ");
                 GenerateExpression(method.ReturnExpression);
                 WriteLine(";");
             }
-
+            
             Unindent();
-            WriteLine("}");
+            WriteLine("}"); 
+        }
+
+            // Asignaciones
+        private void GenerateStatement(IRStatement statement)
+        {
+            switch (statement)
+            {
+                case IRVariableDeclaration decl:
+                    GenerateVariableDeclaration(decl);
+                    break;
+                
+                case IRAssignment assignment:
+                    GenerateAssignment(assignment);
+                    break;
+            }
         }
 
         private void GenerateVariableDeclaration(IRVariableDeclaration decl)

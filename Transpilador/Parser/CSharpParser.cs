@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -13,128 +12,120 @@ namespace Transpilador.Parser
 {
     public class CSharpParser
     {
-        private SemanticModel _semanticModel;
-
         public IRProgram ParseToIR(string csharpCode)
         {
-            // 1. Parsear el código C#
             var tree = CSharpSyntaxTree.ParseText(csharpCode);
             
-            // 2. Crear compilación para resolver símbolos
             var compilation = CSharpCompilation.Create("TempAssembly")
                 .AddSyntaxTrees(tree)
                 .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
 
-            _semanticModel = compilation.GetSemanticModel(tree);
+            var semanticModel = compilation.GetSemanticModel(tree);
 
-            // 3. Convertir a IR
-            var program = new IRProgram();
-            var root = tree.GetRoot();
+            var walker = new IRBuilderWalker(semanticModel);
+            walker.Visit(tree.GetRoot());
 
-            // Buscar namespace
-            var namespaceDecl = root.DescendantNodes().OfType<NamespaceDeclarationSyntax>().FirstOrDefault();
-            if (namespaceDecl != null)
-            {
-                program.Namespace = namespaceDecl.Name.ToString();
-            }
+            return walker.Program;
+        }
+    }
 
-            // Buscar clases
-            var classes = root.DescendantNodes().OfType<ClassDeclarationSyntax>();
-            foreach (var classDecl in classes)
-            {
-                var irClass = ParseClass(classDecl);
-                program.Classes.Add(irClass);
-            }
+    internal class IRBuilderWalker : CSharpSyntaxWalker
+    {
+        private readonly SemanticModel _semanticModel;
+        private IRClass _currentClass;
+        private IRMethod _currentMethod;
 
-            return program;
+        public IRProgram Program { get; }
+
+        public IRBuilderWalker(SemanticModel semanticModel)
+        {
+            _semanticModel = semanticModel;
+            Program = new IRProgram();
         }
 
-        private IRClass ParseClass(ClassDeclarationSyntax classDecl)
+        public override void VisitNamespaceDeclaration(NamespaceDeclarationSyntax node)
         {
-            var irClass = new IRClass(classDecl.Identifier.Text);
-
-            // Parsear métodos
-            var methods = classDecl.Members.OfType<MethodDeclarationSyntax>();
-            foreach (var method in methods)
-            {
-                var irMethod = ParseMethod(method);
-                irClass.Methods.Add(irMethod);
-            }
-
-            return irClass;
+            Program.Namespace = node.Name.ToString();
+            base.VisitNamespaceDeclaration(node);
         }
 
-        private IRMethod ParseMethod(MethodDeclarationSyntax methodDecl)
+        public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
-            var returnType = MapType(methodDecl.ReturnType);
-            var irMethod = new IRMethod(methodDecl.Identifier.Text, returnType);
-
-            if (methodDecl.Body != null)
-            {
-                // Parsear sentencias del cuerpo del método
-                foreach (var statement in methodDecl.Body.Statements)
-                {
-                    ParseStatement(statement, irMethod);
-                }
-            }
-
-            return irMethod;
+            _currentClass = new IRClass(node.Identifier.Text);
+            Program.Classes.Add(_currentClass);
+            base.VisitClassDeclaration(node);
+            _currentClass = null;
         }
 
-        private void ParseStatement(StatementSyntax statement, IRMethod method)
+        public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-            switch (statement)
+            if (_currentClass == null) return;
+
+            var returnType = MapType(node.ReturnType);
+            _currentMethod = new IRMethod(node.Identifier.Text, returnType);
+            _currentClass.Methods.Add(_currentMethod);
+
+            if (node.Body != null)
             {
-                case LocalDeclarationStatementSyntax localDecl:
-                    ParseVariableDeclaration(localDecl, method);
-                    break;
-                
-                case ExpressionStatementSyntax exprStmt:
-                    ParseExpressionStatement(exprStmt, method);
-                    break;
-                
-                case ReturnStatementSyntax returnStmt:
-                    ParseReturnStatement(returnStmt, method);
-                    break;
+                base.VisitMethodDeclaration(node);
             }
+
+            _currentMethod = null;
         }
 
-        private void ParseVariableDeclaration(LocalDeclarationStatementSyntax localDecl, IRMethod method)
+        public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
         {
-            var type = MapType(localDecl.Declaration.Type);
-            
-            foreach (var variable in localDecl.Declaration.Variables)
+            if (_currentMethod == null) return;
+
+            var type = MapType(node.Declaration.Type);
+
+            foreach (var variable in node.Declaration.Variables)
             {
-                IRExpression? initialValue = null;
-                
+                IRExpression initialValue = null;
+
                 if (variable.Initializer != null)
                 {
                     initialValue = ParseExpression(variable.Initializer.Value);
                 }
 
-                var declaration = new IRVariableDeclaration(variable.Identifier.Text, type, initialValue);
-                method.Statements.Add(declaration);
+                var declaration = new IRVariableDeclaration(
+                    variable.Identifier.Text,
+                    type,
+                    initialValue
+                );
+    
+                _currentMethod.Body.Add(declaration);
             }
+
+            base.VisitLocalDeclarationStatement(node);
         }
 
-        private void ParseExpressionStatement(ExpressionStatementSyntax exprStmt, IRMethod method)
+        public override void VisitExpressionStatement(ExpressionStatementSyntax node)
         {
-            if (exprStmt.Expression is AssignmentExpressionSyntax assignment)
+            if (_currentMethod == null) return;
+
+            if (node.Expression is AssignmentExpressionSyntax assignment)
             {
                 var variableName = assignment.Left.ToString();
                 var value = ParseExpression(assignment.Right);
-                
+
                 var irAssignment = new IRAssignment(variableName, value);
-                method.Assignments.Add(irAssignment);
+                _currentMethod.Body.Add(irAssignment);  // ✅ A Body, no a Assignments
             }
+
+            base.VisitExpressionStatement(node);
         }
 
-        private void ParseReturnStatement(ReturnStatementSyntax returnStmt, IRMethod method)
+        public override void VisitReturnStatement(ReturnStatementSyntax node)
         {
-            if (returnStmt.Expression != null)
+            if (_currentMethod == null) return;
+
+            if (node.Expression != null)
             {
-                method.ReturnExpression = ParseExpression(returnStmt.Expression);
+                _currentMethod.ReturnExpression = ParseExpression(node.Expression);
             }
+
+            base.VisitReturnStatement(node);
         }
 
         private IRExpression ParseExpression(ExpressionSyntax expression)
@@ -143,13 +134,13 @@ namespace Transpilador.Parser
             {
                 case LiteralExpressionSyntax literal:
                     return ParseLiteral(literal);
-                
+
                 case IdentifierNameSyntax identifier:
-                    return new IRVariable(identifier.Identifier.Text, "int"); // Simplificado
-                
+                    return new IRVariable(identifier.Identifier.Text, "int");
+
                 case BinaryExpressionSyntax binary:
                     return ParseBinaryExpression(binary);
-                
+
                 default:
                     throw new NotSupportedException($"Expresión no soportada: {expression.GetType().Name}");
             }
@@ -159,7 +150,7 @@ namespace Transpilador.Parser
         {
             var typeInfo = _semanticModel.GetTypeInfo(literal);
             var type = typeInfo.Type?.SpecialType.ToString() ?? "int";
-            
+
             return new IRLiteral(literal.Token.ValueText, MapSpecialType(type));
         }
 
@@ -168,8 +159,8 @@ namespace Transpilador.Parser
             var left = ParseExpression(binary.Left);
             var right = ParseExpression(binary.Right);
             var operation = MapBinaryOperation(binary.OperatorToken.Kind());
-            
-            return new IRBinaryOperation(left, right, operation, "int"); // Simplificado
+
+            return new IRBinaryOperation(left, right, operation, "int");
         }
 
         private IROperationType MapBinaryOperation(SyntaxKind kind)
@@ -193,6 +184,8 @@ namespace Transpilador.Parser
                 "float" => "float",
                 "long" => "long",
                 "void" => "void",
+                "string" => "string",
+                "bool" => "bool",
                 _ => type.ToString()
             };
         }
@@ -205,6 +198,8 @@ namespace Transpilador.Parser
                 "System_Double" => "double",
                 "System_Single" => "float",
                 "System_Int64" => "long",
+                "System_String" => "string",
+                "System_Boolean" => "bool",
                 _ => "int"
             };
         }

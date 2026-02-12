@@ -3,7 +3,7 @@ using Transpilador.Models.Expressions;
 
 namespace Transpilador.Models.Statements
 {
-public class IRAssignment
+public class IRAssignment : IRStatement
     {
         public string VariableName { get; set; }
         public IRExpression Value { get; set; }
