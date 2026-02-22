@@ -96,6 +96,9 @@ namespace Transpilador.Generator
                 case IRBinaryOperation binary:
                     GenerateBinaryOperation(binary);
                     break;
+                case IRUnaryOperation unary:
+                    GenerateUnaryOperation(unary);
+                    break;
             }
         }
 
@@ -107,7 +110,13 @@ namespace Transpilador.Generator
             GenerateExpression(binary.Right);
             Write(")");
         }
-
+        private void GenerateUnaryOperation(IRUnaryOperation unary)
+        {
+            Write("(");
+            Write(unary.ToSymbol());
+            GenerateExpression(unary.Operand);
+            Write(")");
+        }
         private string MapTypeToJava(string csharpType)
         {
             return csharpType switch

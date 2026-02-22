@@ -2,10 +2,24 @@ namespace Transpilador.Models
 {
     public enum IROperationType
     {
+        // Aritméticos
         Add,        // +
         Subtract,   // -
         Multiply,   // *
-        Divide      // /
+        Divide,     // /
+        Modulo,     // %
+
+        // Comparación
+        Equal,              // ==
+        NotEqual,           // !=
+        LessThan,           // <
+        GreaterThan,        // >
+        LessThanOrEqual,    // <=
+        GreaterThanOrEqual, // >=
+
+        // Lógicos binarios
+        LogicalAnd,  // &&
+        LogicalOr,   // ||
     }
 
     public static class IROperationExtensions
@@ -18,13 +32,22 @@ namespace Transpilador.Models
                 IROperationType.Subtract => "-",
                 IROperationType.Multiply => "*",
                 IROperationType.Divide => "/",
+                IROperationType.Modulo => "%",
+                IROperationType.Equal => "==",
+                IROperationType.NotEqual => "!=",
+                IROperationType.LessThan => "<",
+                IROperationType.GreaterThan => ">",
+                IROperationType.LessThanOrEqual => "<=",
+                IROperationType.GreaterThanOrEqual => ">=",
+                IROperationType.LogicalAnd => "&&",
+                IROperationType.LogicalOr => "||",
                 _ => "?"
             };
         }
 
         public static string ToJavaSymbol(this IROperationType operation)
         {
-            // En este caso simple, los símbolos son iguales
+            // En Java los símbolos son iguales que en C#
             return operation.ToSymbol();
         }
     }

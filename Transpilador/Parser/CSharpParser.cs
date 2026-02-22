@@ -128,6 +128,7 @@ namespace Transpilador.Parser
             base.VisitReturnStatement(node);
         }
 
+
         private IRExpression ParseExpression(ExpressionSyntax expression)
         {
             switch (expression)
@@ -141,10 +142,15 @@ namespace Transpilador.Parser
                 case BinaryExpressionSyntax binary:
                     return ParseBinaryExpression(binary);
 
+                case PrefixUnaryExpressionSyntax unary:
+                    return ParseUnaryExpression(unary);
+
                 default:
                     throw new NotSupportedException($"Expresión no soportada: {expression.GetType().Name}");
             }
         }
+
+
 
         private IRLiteral ParseLiteral(LiteralExpressionSyntax literal)
         {
@@ -167,14 +173,49 @@ namespace Transpilador.Parser
         {
             return kind switch
             {
+                // Aritméticos
                 SyntaxKind.PlusToken => IROperationType.Add,
                 SyntaxKind.MinusToken => IROperationType.Subtract,
                 SyntaxKind.AsteriskToken => IROperationType.Multiply,
                 SyntaxKind.SlashToken => IROperationType.Divide,
+                SyntaxKind.PercentToken => IROperationType.Modulo,
+
+                // Comparación
+                SyntaxKind.EqualsEqualsToken => IROperationType.Equal,
+                SyntaxKind.ExclamationEqualsToken => IROperationType.NotEqual,
+                SyntaxKind.LessThanToken => IROperationType.LessThan,
+                SyntaxKind.GreaterThanToken => IROperationType.GreaterThan,
+                SyntaxKind.LessThanEqualsToken => IROperationType.LessThanOrEqual,
+                SyntaxKind.GreaterThanEqualsToken => IROperationType.GreaterThanOrEqual,
+
+                // Lógicos
+                SyntaxKind.AmpersandAmpersandToken => IROperationType.LogicalAnd,
+                SyntaxKind.BarBarToken => IROperationType.LogicalOr,
+
                 _ => throw new NotSupportedException($"Operación no soportada: {kind}")
             };
         }
 
+
+
+
+        private IRUnaryOperation ParseUnaryExpression(PrefixUnaryExpressionSyntax unary)
+        {
+            var operand = ParseExpression(unary.Operand);
+            var operation = unary.OperatorToken.Kind() switch
+            {
+                SyntaxKind.MinusToken => IRUnaryOperationType.Negate,
+                SyntaxKind.ExclamationToken => IRUnaryOperationType.LogicalNot,
+                _ => throw new NotSupportedException($"Operador unario no soportado: {unary.OperatorToken.Kind()}")
+            };
+
+            return new IRUnaryOperation(operand, operation, operand.Type);
+        }
+
+
+
+
+        
         private string MapType(TypeSyntax type)
         {
             return type.ToString() switch
