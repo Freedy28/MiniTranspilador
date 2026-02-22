@@ -7,83 +7,26 @@ namespace Transpilador
 {
     class Program
     {
+        private static readonly string OutputDir = Path.Combine("Examples", "Output");
+        private static readonly string DefaultInput = Path.Combine("Examples", "Input", "prueba_05_completo.cs");
+
         static void Main(string[] args)
         {
-            Console.WriteLine("=== Mini Transpilador C# -> Java ===");
-            Console.WriteLine("Soporta: suma, resta, multiplicación y división\n");
-
-            // DEPURACIÓN: Mostrar argumentos recibidos
-            Console.WriteLine($"🔍 Argumentos recibidos: {args.Length}");
-            for (int i = 0; i < args.Length; i++)
-            {
-                Console.WriteLine($"   Arg[{i}]: '{args[i]}'");
-            }
-            Console.WriteLine();
+            // Cuando VS ejecuta el .exe desde bin\Debug\net9.0\, sube 3 niveles a la raíz del proyecto
+            string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+            Directory.SetCurrentDirectory(projectRoot);
 
             string sourceCode;
-            string fileName = "";
-            
-            if (args.Length > 0)
+            string fileName = args.Length > 0 ? args[0] : DefaultInput;
+
+            if (File.Exists(fileName))
             {
-                fileName = args[0];
-                Console.WriteLine($"🔍 Intentando leer archivo: '{fileName}'");
-                
-                // Convertir a ruta absoluta para depuración
-                string absolutePath = Path.GetFullPath(fileName);
-                Console.WriteLine($"🔍 Ruta absoluta: '{absolutePath}'");
-                
-                if (!File.Exists(fileName))
-                {
-                    Console.WriteLine($"❌ ERROR: El archivo '{fileName}' NO EXISTE");
-                    Console.WriteLine($"❌ Ruta absoluta verificada: '{absolutePath}'");
-                    
-                    // Sugerencias de archivos cercanos
-                    string directory = Path.GetDirectoryName(absolutePath) ?? Directory.GetCurrentDirectory();
-                    Console.WriteLine($"\n💡 Archivos .cs encontrados en '{directory}':");
-                    
-                    try
-                    {
-                        var csFiles = Directory.GetFiles(directory, "*.cs");
-                        if (csFiles.Length > 0)
-                        {
-                            foreach (var file in csFiles)
-                            {
-                                Console.WriteLine($"   - {Path.GetFileName(file)}");
-                            }
-                        }
-                        else
-                        {
-                            Console.WriteLine("   (No se encontraron archivos .cs)");
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"   Error listando archivos: {ex.Message}");
-                    }
-                    
-                    Console.WriteLine("\n📝 Usando código de ejemplo por defecto...\n");
-                    sourceCode = GetDefaultCode();
-                }
-                else
-                {
-                    try
-                    {
-                        sourceCode = File.ReadAllText(fileName);
-                        Console.WriteLine($"✅ Archivo leído correctamente: {fileName}");
-                        Console.WriteLine($"📊 Tamaño: {new FileInfo(fileName).Length} bytes\n");
-                    }
-                    catch (Exception ex)
-                    {
-                        Console.WriteLine($"❌ Error leyendo archivo: {ex.Message}");
-                        Console.WriteLine("📝 Usando código de ejemplo por defecto...\n");
-                        sourceCode = GetDefaultCode();
-                    }
-                }
+                sourceCode = File.ReadAllText(fileName);
             }
             else
             {
-                Console.WriteLine("📝 No se especificó archivo. Usando código de ejemplo:\n");
-                sourceCode = GetDefaultCode();
+                Console.WriteLine($"Error: El archivo '{fileName}' no existe.");
+                return;
             }
 
             TranspileAndShow(sourceCode, fileName);
@@ -91,56 +34,28 @@ namespace Transpilador
 
         private static void TranspileAndShow(string sourceCode, string fileName)
         {
-            try
-            {
-                Console.WriteLine("📋 C# Original:");
-                Console.WriteLine("================");
-                Console.WriteLine(sourceCode);
-                Console.WriteLine();
+            Console.WriteLine("=== Entrada C# ===");
+            Console.WriteLine(sourceCode);
 
-                var parser = new CSharpParser();
-                var ir = parser.ParseToIR(sourceCode);
+            var parser = new CSharpParser();
+            var ir = parser.ParseToIR(sourceCode);
 
-                var generator = new JavaGenerator();
-                var javaCode = generator.GenerateJava(ir);
+            var generator = new JavaGenerator();
+            var javaCode = generator.GenerateJava(ir);
 
-                Console.WriteLine("☕ Java Transpilado:");
-                Console.WriteLine("===================");
-                Console.WriteLine(javaCode);
+            Console.WriteLine("=== Salida Java ===");
+            Console.WriteLine(javaCode);
 
-                // Determinar nombre de archivo de salida
-                var outputFileName = string.IsNullOrEmpty(fileName)
+            Directory.CreateDirectory(OutputDir);
+            var outputFileName = Path.Combine(
+                OutputDir,
+                string.IsNullOrEmpty(fileName)
                     ? "output.java"
-                    : Path.ChangeExtension(Path.GetFileName(fileName), ".java");
+                    : Path.ChangeExtension(Path.GetFileName(fileName), ".java")
+            );
 
-                File.WriteAllText(outputFileName, javaCode);
-                Console.WriteLine($"\n✅ Archivo guardado como '{outputFileName}'");
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"❌ Error: {ex.Message}");
-                if (ex.InnerException != null)
-                {
-                    Console.WriteLine($"💡 Detalle: {ex.InnerException.Message}");
-                }
-            }
-        }
-
-        private static string GetDefaultCode()
-        {
-            return @"
-class Calculadora
-{
-    public int Calculate()
-    {
-        int a = 10;           // 1. Declaración
-        int b = 5;            // 2. Declaración
-        int suma = a + b;     // 3. Declaración
-        suma = suma + 1;      // 4. Asignación
-        int resta = a - b;    // 5. Declaración
-        return suma;
-    }
-}";
+            File.WriteAllText(outputFileName, javaCode);
+            Console.WriteLine($"Archivo guardado en '{outputFileName}'");
         }
     }
 }

@@ -16,9 +16,13 @@ namespace Transpilador.Generator.Base
             }
         }
 
-        // 2. Recorre los métodos de una clase
+        // 2. Recorre los campos y métodos de una clase
         public virtual void VisitClass(IRClass irClass)
         {
+            foreach (var field in irClass.Fields)
+            {
+                VisitField(field);
+            }
             foreach (var method in irClass.Methods)
             {
                 VisitMethod(method);
@@ -45,11 +49,16 @@ namespace Transpilador.Generator.Base
                 case IRAssignment assign:
                     VisitAssignment(assign);
                     break;
+                case IRConsoleOutput output:
+                    VisitConsoleOutput(output);
+                    break;
             }
         }
 
         // 5. Métodos vacíos que los hijos (como JavaGenerator) van a sobrescribir
+        protected virtual void VisitField(IRField field) { }
         protected virtual void VisitVariableDeclaration(IRVariableDeclaration decl) { }
         protected virtual void VisitAssignment(IRAssignment assignment) { }
+        protected virtual void VisitConsoleOutput(IRConsoleOutput output) { }
     }
 }

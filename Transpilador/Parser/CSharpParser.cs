@@ -1,11 +1,11 @@
 using System;
+using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Transpilador.Models;
 using Transpilador.Models.Base;
-using Transpilador.Models.Expressions;
-using Transpilador.Models.Statements;
+using Transpilador.Models.Expressions;using Transpilador.Models.Statements;
 using Transpilador.Models.Structure;
 
 namespace Transpilador.Parser
@@ -51,7 +51,10 @@ namespace Transpilador.Parser
 
         public override void VisitClassDeclaration(ClassDeclarationSyntax node)
         {
-            _currentClass = new IRClass(node.Identifier.Text);
+            _currentClass = new IRClass(node.Identifier.Text)
+            {
+                AccessModifier = ParseAccessModifier(node.Modifiers)
+            };
             Program.Classes.Add(_currentClass);
             base.VisitClassDeclaration(node);
             _currentClass = null;
@@ -62,7 +65,16 @@ namespace Transpilador.Parser
             if (_currentClass == null) return;
 
             var returnType = MapType(node.ReturnType);
-            _currentMethod = new IRMethod(node.Identifier.Text, returnType);
+            var methodName = node.Identifier.Text;
+            bool isStatic = node.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword));
+            bool isEntryPoint = isStatic && methodName == "Main";
+
+            _currentMethod = new IRMethod(methodName, returnType)
+            {
+                AccessModifier = ParseAccessModifier(node.Modifiers),
+                IsStatic = isStatic,
+                IsEntryPoint = isEntryPoint
+            };
             _currentClass.Methods.Add(_currentMethod);
 
             if (node.Body != null)
@@ -108,9 +120,19 @@ namespace Transpilador.Parser
             {
                 var variableName = assignment.Left.ToString();
                 var value = ParseExpression(assignment.Right);
-
-                var irAssignment = new IRAssignment(variableName, value);
-                _currentMethod.Body.Add(irAssignment);
+                _currentMethod.Body.Add(new IRAssignment(variableName, value));
+            }
+            else if (node.Expression is InvocationExpressionSyntax invocation)
+            {
+                var methodName = invocation.Expression.ToString();
+                if (methodName == "Console.WriteLine" || methodName == "Console.Write")
+                {
+                    bool newLine = methodName == "Console.WriteLine";
+                    IRExpression argument = null;
+                    if (invocation.ArgumentList.Arguments.Count > 0)
+                        argument = ParseExpression(invocation.ArgumentList.Arguments[0].Expression);
+                    _currentMethod.Body.Add(new IRConsoleOutput(argument, newLine));
+                }
             }
 
             base.VisitExpressionStatement(node);
@@ -145,9 +167,40 @@ namespace Transpilador.Parser
                 case PrefixUnaryExpressionSyntax unary:
                     return ParseUnaryExpression(unary);
 
+                case ParenthesizedExpressionSyntax paren:
+                    return ParseExpression(paren.Expression);
+
+                case InvocationExpressionSyntax invocation:
+                    return ParseInvocationExpression(invocation);
+
                 default:
                     throw new NotSupportedException($"Expresión no soportada: {expression.GetType().Name}");
             }
+        }
+
+        private IRExpression ParseInvocationExpression(InvocationExpressionSyntax invocation)
+        {
+            var methodName = invocation.Expression.ToString();
+            var args = invocation.ArgumentList.Arguments;
+
+            if (methodName == "Console.ReadLine")
+                return new IRConsoleInput("string");
+
+            if (args.Count == 1 &&
+                args[0].Expression is InvocationExpressionSyntax inner &&
+                inner.Expression.ToString() == "Console.ReadLine")
+            {
+                return methodName switch
+                {
+                    "int.Parse"    => new IRConsoleInput("int"),
+                    "double.Parse" => new IRConsoleInput("double"),
+                    "float.Parse"  => new IRConsoleInput("float"),
+                    "long.Parse"   => new IRConsoleInput("long"),
+                    _              => new IRConsoleInput("string")
+                };
+            }
+
+            throw new NotSupportedException($"Invocación no soportada: {methodName}");
         }
 
 
@@ -243,6 +296,46 @@ namespace Transpilador.Parser
                 "System_Boolean" => "bool",
                 _ => "int"
             };
+        }
+
+        private IRAccessModifier ParseAccessModifier(SyntaxTokenList modifiers)
+        {
+            bool hasProtected = modifiers.Any(m => m.IsKind(SyntaxKind.ProtectedKeyword));
+            bool hasInternal  = modifiers.Any(m => m.IsKind(SyntaxKind.InternalKeyword));
+            bool hasPrivate   = modifiers.Any(m => m.IsKind(SyntaxKind.PrivateKeyword));
+
+            if (modifiers.Any(m => m.IsKind(SyntaxKind.PublicKeyword))) return IRAccessModifier.Public;
+            if (hasProtected && hasInternal)                             return IRAccessModifier.ProtectedInternal;
+            if (hasPrivate   && hasProtected)                           return IRAccessModifier.PrivateProtected;
+            if (hasPrivate)                                             return IRAccessModifier.Private;
+            if (hasProtected)                                           return IRAccessModifier.Protected;
+            if (hasInternal)                                            return IRAccessModifier.Internal;
+            return IRAccessModifier.Internal;
+        }
+
+        public override void VisitFieldDeclaration(FieldDeclarationSyntax node)
+        {
+            if (_currentClass == null) return;
+
+            var type     = MapType(node.Declaration.Type);
+            bool isStatic = node.Modifiers.Any(m => m.IsKind(SyntaxKind.StaticKeyword));
+            var modifier  = ParseAccessModifier(node.Modifiers);
+
+            foreach (var variable in node.Declaration.Variables)
+            {
+                IRExpression initialValue = null;
+                if (variable.Initializer != null)
+                    initialValue = ParseExpression(variable.Initializer.Value);
+
+                var field = new IRField(variable.Identifier.Text, type)
+                {
+                    AccessModifier = modifier,
+                    IsStatic       = isStatic,
+                    InitialValue   = initialValue
+                };
+
+                _currentClass.Fields.Add(field);
+            }
         }
     }
 }
