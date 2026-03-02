@@ -1,61 +1,169 @@
-﻿using System;
-using System.IO;
+﻿using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.HttpLogging;
+using Transpilador.Errors;
 using Transpilador.Parser;
 using Transpilador.Generator;
 
-namespace Transpilador
+var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.AddCors(options =>
 {
-    class Program
+    options.AddPolicy("ReactApp", policy =>
     {
-        private static readonly string OutputDir = Path.Combine("Examples", "Output");
-        private static readonly string DefaultInput = Path.Combine("Examples", "Input", "prueba_05_completo.cs");
+        policy.WithOrigins(builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
 
-        static void Main(string[] args)
-        {
-            // Cuando VS ejecuta el .exe desde bin\Debug\net9.0\, sube 3 niveles a la raíz del proyecto
-            string projectRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
-            Directory.SetCurrentDirectory(projectRoot);
+builder.Services.AddHttpLogging(logging =>
+{
+    logging.LoggingFields = HttpLoggingFields.RequestMethod
+                          | HttpLoggingFields.RequestPath
+                          | HttpLoggingFields.RequestHeaders
+                          | HttpLoggingFields.ResponseStatusCode
+                          | HttpLoggingFields.Duration;
+    logging.RequestHeaders.Add("Origin");
+    logging.RequestHeaders.Add("Content-Type");
+    logging.CombineLogs = true;
+});
 
-            string sourceCode;
-            string fileName = args.Length > 0 ? args[0] : DefaultInput;
+var app = builder.Build();
 
-            if (File.Exists(fileName))
-            {
-                sourceCode = File.ReadAllText(fileName);
-            }
-            else
-            {
-                Console.WriteLine($"Error: El archivo '{fileName}' no existe.");
-                return;
-            }
+var logger = app.Logger;
 
-            TranspileAndShow(sourceCode, fileName);
-        }
+// ── Middleware global de errores (solo errores inesperados → 500) ───────────
+app.UseExceptionHandler(errorApp =>
+{
+    errorApp.Run(async context =>
+    {
+        var feature   = context.Features.Get<IExceptionHandlerFeature>();
+        var exception = feature?.Error;
+        var log       = context.RequestServices.GetRequiredService<ILogger<Program>>();
+        var traceId   = context.TraceIdentifier;
 
-        private static void TranspileAndShow(string sourceCode, string fileName)
-        {
-            Console.WriteLine("=== Entrada C# ===");
-            Console.WriteLine(sourceCode);
+        log.LogError(exception, "[ExceptionHandler] Error inesperado. TraceId: {TraceId}", traceId);
 
-            var parser = new CSharpParser();
-            var ir = parser.ParseToIR(sourceCode);
+        context.Response.StatusCode  = StatusCodes.Status500InternalServerError;
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsJsonAsync(
+            new ApiError("internal", "Error interno del servidor.", null, traceId)
+        );
+    });
+});
 
-            var generator = new JavaGenerator();
-            var javaCode = generator.GenerateJava(ir);
+app.UseHttpLogging();
+app.UseCors("ReactApp");
 
-            Console.WriteLine("=== Salida Java ===");
-            Console.WriteLine(javaCode);
+logger.LogInformation("=== Transpilador API iniciada ===");
+logger.LogInformation("Escuchando en: {Urls}", string.Join(", ", builder.WebHost.GetSetting("urls") ?? "http://localhost:5000"));
+logger.LogInformation("CORS habilitado para: {Origin}", builder.Configuration["AllowedOrigins"] ?? "http://localhost:5173");
+logger.LogInformation("Endpoints disponibles:");
+logger.LogInformation("  POST /api/transpile       → body JSON {{ \"code\": \"...\" }}");
+logger.LogInformation("  POST /api/transpile/file  → multipart/form-data campo 'file'");
 
-            Directory.CreateDirectory(OutputDir);
-            var outputFileName = Path.Combine(
-                OutputDir,
-                string.IsNullOrEmpty(fileName)
-                    ? "output.java"
-                    : Path.ChangeExtension(Path.GetFileName(fileName), ".java")
-            );
-
-            File.WriteAllText(outputFileName, javaCode);
-            Console.WriteLine($"Archivo guardado en '{outputFileName}'");
-        }
+// ── POST /api/transpile ─────────────────────────────────────────────────────
+app.MapPost("/api/transpile", (TranspileRequest request, ILogger<Program> log) =>
+{
+    if (string.IsNullOrWhiteSpace(request.Code))
+    {
+        log.LogWarning("[/api/transpile] Rechazada: el campo 'code' está vacío");
+        return Results.BadRequest(new ApiError("validation", "El campo 'code' es requerido."));
     }
-}
+
+    int lines = request.Code.Split('\n').Length;
+    log.LogInformation("[/api/transpile] Transpilando código ({Lines} líneas)...", lines);
+
+    try
+    {
+        var parser    = new CSharpParser();
+        var ir        = parser.ParseToIR(request.Code);
+        var generator = new JavaGenerator();
+        var javaCode  = generator.GenerateJava(ir);
+
+        log.LogInformation("[/api/transpile] Éxito → {OutputLines} líneas de Java generadas", javaCode.Split('\n').Length);
+        return Results.Ok(new { javaCode });
+    }
+    catch (TranspileException ex)
+    {
+        log.LogWarning("[/api/transpile] {Type}: {Message}", ex.ErrorType, ex.Message);
+        return Results.Json(new ApiError(ex.ErrorType, ex.Message, ex.Details),
+            statusCode: ex.ErrorType == "no_classes"
+                ? StatusCodes.Status400BadRequest
+                : StatusCodes.Status422UnprocessableEntity);
+    }
+    catch (NotSupportedException ex)
+    {
+        log.LogWarning("[/api/transpile] Construcción no soportada: {Message}", ex.Message);
+        return Results.Json(
+            new ApiError("unsupported", "Construcción de C# no soportada por el transpilador.",
+                new List<ErrorDetail> { new ErrorDetail("UNSUPPORTED", ex.Message) }),
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+    }
+});
+
+// ── POST /api/transpile/file ────────────────────────────────────────────────
+app.MapPost("/api/transpile/file", async (IFormFile file, ILogger<Program> log) =>
+{
+    if (file is null || file.Length == 0)
+    {
+        log.LogWarning("[/api/transpile/file] Rechazada: no se envió ningún archivo");
+        return Results.BadRequest(new ApiError("validation", "No se proporcionó ningún archivo."));
+    }
+
+    if (!file.FileName.EndsWith(".cs", StringComparison.OrdinalIgnoreCase))
+    {
+        log.LogWarning("[/api/transpile/file] Rechazada: extensión inválida '{Ext}'", Path.GetExtension(file.FileName));
+        return Results.Json(
+            new ApiError("validation", $"El archivo debe tener extensión .cs. Se recibió: '{file.FileName}'."),
+            statusCode: StatusCodes.Status415UnsupportedMediaType
+        );
+    }
+
+    const long maxBytes = 1 * 1024 * 1024;
+    if (file.Length > maxBytes)
+    {
+        log.LogWarning("[/api/transpile/file] Rechazada: archivo demasiado grande ({Size} bytes)", file.Length);
+        return Results.Json(
+            new ApiError("validation", "El archivo supera el tamaño máximo permitido de 1 MB."),
+            statusCode: StatusCodes.Status413RequestEntityTooLarge
+        );
+    }
+
+    log.LogInformation("[/api/transpile/file] Archivo recibido: '{Name}' ({Size} bytes)", file.FileName, file.Length);
+
+    using var reader = new StreamReader(file.OpenReadStream());
+    var code = await reader.ReadToEndAsync();
+
+    try
+    {
+        var parser    = new CSharpParser();
+        var ir        = parser.ParseToIR(code);
+        var generator = new JavaGenerator();
+        var javaCode  = generator.GenerateJava(ir);
+        var outputFileName = Path.ChangeExtension(file.FileName, ".java");
+
+        log.LogInformation("[/api/transpile/file] Éxito → '{Output}' ({OutputLines} líneas de Java generadas)", outputFileName, javaCode.Split('\n').Length);
+        return Results.Ok(new { javaCode, fileName = outputFileName });
+    }
+    catch (TranspileException ex)
+    {
+        log.LogWarning("[/api/transpile/file] {Type}: {Message}", ex.ErrorType, ex.Message);
+        return Results.Json(new ApiError(ex.ErrorType, ex.Message, ex.Details),
+            statusCode: ex.ErrorType == "no_classes"
+                ? StatusCodes.Status400BadRequest
+                : StatusCodes.Status422UnprocessableEntity);
+    }
+    catch (NotSupportedException ex)
+    {
+        log.LogWarning("[/api/transpile/file] Construcción no soportada: {Message}", ex.Message);
+        return Results.Json(
+            new ApiError("unsupported", "Construcción de C# no soportada por el transpilador.",
+                new List<ErrorDetail> { new ErrorDetail("UNSUPPORTED", ex.Message) }),
+            statusCode: StatusCodes.Status422UnprocessableEntity);
+    }
+}).DisableAntiforgery();
+
+app.Run();
+
+record TranspileRequest(string Code);

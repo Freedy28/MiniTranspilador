@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Transpilador.Errors;
 using Transpilador.Models;
 using Transpilador.Models.Base;
 using Transpilador.Models.Expressions;using Transpilador.Models.Statements;
@@ -15,7 +16,26 @@ namespace Transpilador.Parser
         public IRProgram ParseToIR(string csharpCode)
         {
             var tree = CSharpSyntaxTree.ParseText(csharpCode);
-            
+
+            var syntaxErrors = tree.GetDiagnostics()
+                .Where(d => d.Severity == DiagnosticSeverity.Error)
+                .ToList();
+
+            if (syntaxErrors.Count > 0)
+            {
+                var details = syntaxErrors.Select(d =>
+                {
+                    var pos = d.Location.GetLineSpan().StartLinePosition;
+                    return new ErrorDetail(d.Id, d.GetMessage(), pos.Line + 1, pos.Character + 1);
+                }).ToList();
+
+                throw new TranspileException(
+                    $"El código C# contiene {syntaxErrors.Count} error(es) de sintaxis.",
+                    "parse",
+                    details
+                );
+            }
+
             var compilation = CSharpCompilation.Create("TempAssembly")
                 .AddSyntaxTrees(tree)
                 .AddReferences(MetadataReference.CreateFromFile(typeof(object).Assembly.Location));
@@ -24,6 +44,22 @@ namespace Transpilador.Parser
 
             var walker = new IRBuilderWalker(semanticModel);
             walker.Visit(tree.GetRoot());
+
+            if (walker.Program.Classes.Count == 0)
+            {
+                var hasTopLevelStatements = tree.GetRoot()
+                    .DescendantNodes()
+                    .Any(n => n is GlobalStatementSyntax || n is LocalFunctionStatementSyntax);
+
+                var hint = hasTopLevelStatements
+                    ? " Se detectaron sentencias o funciones en el nivel superior, pero el transpilador requiere clases con sus métodos definidos."
+                    : " Asegúrate de que el código tenga al menos una declaración de clase (class).";
+
+                throw new TranspileException(
+                    "No se encontraron clases en el código." + hint,
+                    "no_classes"
+                );
+            }
 
             return walker.Program;
         }
