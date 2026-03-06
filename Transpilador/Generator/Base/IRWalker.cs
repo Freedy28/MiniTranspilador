@@ -52,6 +52,9 @@ namespace Transpilador.Generator.Base
                 case IRConsoleOutput output:
                     VisitConsoleOutput(output);
                     break;
+                case IRIf ifStmt:
+                    VisitIf(ifStmt);
+                    break;
             }
         }
 
@@ -60,5 +63,6 @@ namespace Transpilador.Generator.Base
         protected virtual void VisitVariableDeclaration(IRVariableDeclaration decl) { }
         protected virtual void VisitAssignment(IRAssignment assignment) { }
         protected virtual void VisitConsoleOutput(IRConsoleOutput output) { }
+        protected virtual void VisitIf(IRIf ifStmt) { }
     }
 }

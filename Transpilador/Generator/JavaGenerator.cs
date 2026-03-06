@@ -128,6 +128,39 @@ namespace Transpilador.Generator
             GenerateExpression(assignment.Value);
             WriteLine(";");
         }
+        // Agregar este método en la clase JavaGenerator, 
+// después del método VisitAssignment
+
+        protected override void VisitIf(IRIf ifStmt)
+        {
+            // 1. Escribir "if (condición) {"
+            Write("if (");
+            GenerateExpression(ifStmt.Condition);
+            WriteLine(") {");
+            
+            // 2. Indentar y escribir el cuerpo del 'then'
+            Indent();
+            foreach (var stmt in ifStmt.ThenBranch)
+            {
+                VisitStatement(stmt);
+            }
+            Unindent();
+            
+            // 3. Si hay bloque 'else', generarlo
+            if (ifStmt.ElseBranch != null && ifStmt.ElseBranch.Count > 0)
+            {
+                WriteLine("} else {");
+                Indent();
+                foreach (var stmt in ifStmt.ElseBranch)
+                {
+                    VisitStatement(stmt);
+                }
+                Unindent();
+            }
+            
+            // 4. Cerrar el bloque
+            WriteLine("}");
+        }
         
         private void GenerateExpression(IRExpression expression)
         {

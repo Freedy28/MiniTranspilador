@@ -6,7 +6,8 @@ using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Transpilador.Errors;
 using Transpilador.Models;
 using Transpilador.Models.Base;
-using Transpilador.Models.Expressions;using Transpilador.Models.Statements;
+using Transpilador.Models.Expressions;
+using Transpilador.Models.Statements;
 using Transpilador.Models.Structure;
 
 namespace Transpilador.Parser
@@ -120,6 +121,7 @@ namespace Transpilador.Parser
 
             _currentMethod = null;
         }
+        
 
         public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
         {
@@ -184,6 +186,41 @@ namespace Transpilador.Parser
             }
 
             base.VisitReturnStatement(node);
+        }
+        // Agregar este método en la clase IRBuilderWalker, después de VisitReturnStatement
+
+        public override void VisitIfStatement(IfStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            // 1. Parsear la condición (ej: x > 5)
+            var condition = ParseExpression(node.Condition);
+            var ifStmt = new IRIf(condition);
+
+            // 2. Procesar el bloque 'then' (código dentro del if)
+            var previousMethod = _currentMethod;
+            var tempMethod = new IRMethod("temp", "void");
+            _currentMethod = tempMethod;
+            
+            Visit(node.Statement);  // Visita el cuerpo del if
+            
+            ifStmt.ThenBranch = new List<IRStatement>(tempMethod.Body);
+            _currentMethod = previousMethod;
+
+            // 3. Procesar el bloque 'else' si existe
+            if (node.Else != null)
+            {
+                tempMethod = new IRMethod("temp", "void");
+                _currentMethod = tempMethod;
+                
+                Visit(node.Else.Statement);  // Visita el cuerpo del else
+                
+                ifStmt.ElseBranch = new List<IRStatement>(tempMethod.Body);
+                _currentMethod = previousMethod;
+            }
+
+            // 4. Agregar el if completo al cuerpo del método actual
+            _currentMethod.Body.Add(ifStmt);
         }
 
 
