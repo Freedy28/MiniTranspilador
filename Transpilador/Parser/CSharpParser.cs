@@ -172,6 +172,14 @@ namespace Transpilador.Parser
                     _currentMethod.Body.Add(new IRConsoleOutput(argument, newLine));
                 }
             }
+            else if (node.Expression is PostfixUnaryExpressionSyntax postfix)
+            {
+                _currentMethod.Body.Add(new IRExpressionStatement(ParsePostfixUnaryExpression(postfix)));
+            }       
+            else if (node.Expression is PrefixUnaryExpressionSyntax prefix)
+            {
+                _currentMethod.Body.Add(new IRExpressionStatement(ParseUnaryExpression(prefix)));
+            }
 
             base.VisitExpressionStatement(node);
         }
@@ -222,6 +230,60 @@ namespace Transpilador.Parser
             // 4. Agregar el if completo al cuerpo del método actual
             _currentMethod.Body.Add(ifStmt);
         }
+        public override void VisitWhileStatement(WhileStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            var condition = ParseExpression(node.Condition);
+            var whileLoop = new IRWhile(condition);
+
+            var previousMethod = _currentMethod;
+            var tempMethod = new IRMethod("temp", "void");
+            _currentMethod = tempMethod;
+
+            Visit(node.Statement);
+
+            whileLoop.Body = new List<IRStatement>(tempMethod.Body);
+            _currentMethod = previousMethod;
+
+            _currentMethod.Body.Add(whileLoop);
+        }
+
+        public override void VisitForStatement(ForStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            IRStatement initializer = null;
+            if (node.Declaration != null)
+            {
+                var type = MapType(node.Declaration.Type);
+                var variable = node.Declaration.Variables.First();
+                IRExpression initValue = null;
+                if (variable.Initializer != null)
+                    initValue = ParseExpression(variable.Initializer.Value);
+                
+                initializer = new IRVariableDeclaration(variable.Identifier.Text, type, initValue);
+            }
+
+            IRExpression condition = null;
+            if (node.Condition != null) condition = ParseExpression(node.Condition);
+
+            IRExpression incrementor = null;
+            if (node.Incrementors.Count > 0) incrementor = ParseExpression(node.Incrementors.First());
+
+            var forLoop = new IRFor(initializer, condition, incrementor);
+
+            var previousMethod = _currentMethod;
+            var tempMethod = new IRMethod("temp", "void");
+            _currentMethod = tempMethod;
+
+            Visit(node.Statement);
+
+            forLoop.Body = new List<IRStatement>(tempMethod.Body);
+            _currentMethod = previousMethod;
+
+            _currentMethod.Body.Add(forLoop);
+        }
 
 
         private IRExpression ParseExpression(ExpressionSyntax expression)
@@ -245,10 +307,23 @@ namespace Transpilador.Parser
 
                 case InvocationExpressionSyntax invocation:
                     return ParseInvocationExpression(invocation);
+                case PostfixUnaryExpressionSyntax postfix:
+                    return ParsePostfixUnaryExpression(postfix);    
 
                 default:
                     throw new NotSupportedException($"Expresión no soportada: {expression.GetType().Name}");
             }
+        }
+        private IRUnaryOperation ParsePostfixUnaryExpression(PostfixUnaryExpressionSyntax postfix)
+        {
+            var operand = ParseExpression(postfix.Operand);
+            var operation = postfix.OperatorToken.Kind() switch
+            {
+                SyntaxKind.PlusPlusToken => IRUnaryOperationType.Increment,
+                SyntaxKind.MinusMinusToken => IRUnaryOperationType.Decrement,
+                _ => throw new NotSupportedException($"Operador postfix no soportado: {postfix.OperatorToken.Kind()}")
+            };
+            return new IRUnaryOperation(operand, operation, operand.Type);
         }
 
         private IRExpression ParseInvocationExpression(InvocationExpressionSyntax invocation)

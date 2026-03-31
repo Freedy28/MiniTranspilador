@@ -5,7 +5,9 @@ namespace Transpilador.Models.Expressions
     public enum IRUnaryOperationType
     {
         Negate,     // -  (negación aritmética)
-        LogicalNot  // !  (negación lógica)
+        LogicalNot,  // !  (negación lógica)
+        Increment,   // ++ (incremento)
+        Decrement    // -- (decremento)
     }
 
     public class IRUnaryOperation : IRExpression
@@ -27,6 +29,8 @@ namespace Transpilador.Models.Expressions
             {
                 IRUnaryOperationType.Negate => "-",
                 IRUnaryOperationType.LogicalNot => "!",
+                IRUnaryOperationType.Increment => "++",
+                IRUnaryOperationType.Decrement => "--",
                 _ => "?"
             };
         }

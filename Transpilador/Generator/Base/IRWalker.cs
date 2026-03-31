@@ -49,11 +49,20 @@ namespace Transpilador.Generator.Base
                 case IRAssignment assign:
                     VisitAssignment(assign);
                     break;
+                case IRExpressionStatement exprStmt:
+                    VisitExpressionStatement(exprStmt);
+                    break;  
                 case IRConsoleOutput output:
                     VisitConsoleOutput(output);
                     break;
                 case IRIf ifStmt:
                     VisitIf(ifStmt);
+                    break;
+                case IRFor forStmt:
+                    VisitFor(forStmt);
+                    break;
+                case IRWhile whileStmt: 
+                    VisitWhile(whileStmt);    
                     break;
             }
         }
@@ -62,7 +71,10 @@ namespace Transpilador.Generator.Base
         protected virtual void VisitField(IRField field) { }
         protected virtual void VisitVariableDeclaration(IRVariableDeclaration decl) { }
         protected virtual void VisitAssignment(IRAssignment assignment) { }
+        protected virtual void VisitExpressionStatement(IRExpressionStatement exprStmt) { }
         protected virtual void VisitConsoleOutput(IRConsoleOutput output) { }
         protected virtual void VisitIf(IRIf ifStmt) { }
+        protected virtual void VisitFor(IRFor forStmt) { }
+        protected virtual void VisitWhile(IRWhile whileStmt) { }
     }
 }

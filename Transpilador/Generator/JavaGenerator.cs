@@ -128,6 +128,11 @@ namespace Transpilador.Generator
             GenerateExpression(assignment.Value);
             WriteLine(";");
         }
+        protected override void VisitExpressionStatement(IRExpressionStatement exprStmt)
+        {
+            GenerateExpression(exprStmt.Expression);
+            WriteLine(";");
+        }
         // Agregar este método en la clase JavaGenerator, 
 // después del método VisitAssignment
 
@@ -161,6 +166,57 @@ namespace Transpilador.Generator
             // 4. Cerrar el bloque
             WriteLine("}");
         }
+        protected override void VisitWhile(IRWhile whileLoop)
+        {
+            Write("while (");
+            GenerateExpression(whileLoop.Condition);
+            WriteLine(") {");
+            
+            Indent();
+            foreach (var stmt in whileLoop.Body)
+            {
+                VisitStatement(stmt);
+            }
+            Unindent();
+            
+            WriteLine("}");
+        }
+
+        protected override void VisitFor(IRFor forLoop)
+        {
+            Write("for (");
+            
+            // 1. Initializer
+            if (forLoop.Initializer is IRVariableDeclaration decl)
+            {
+                var type = MapTypeToJava(decl.Type);
+                Write($"{type} {decl.Name}");
+                if (decl.InitialValue != null)
+                {
+                    Write(" = ");
+                    GenerateExpression(decl.InitialValue);
+                }
+            }
+            Write("; ");
+            
+            // 2. Condition
+            if (forLoop.Condition != null) GenerateExpression(forLoop.Condition);
+            Write("; ");
+            
+            // 3. Incrementor
+            if (forLoop.Incrementor != null) GenerateExpression(forLoop.Incrementor);
+            
+            WriteLine(") {");
+            
+            Indent();
+            foreach (var stmt in forLoop.Body)
+            {
+                VisitStatement(stmt);
+            }
+            Unindent();
+            
+            WriteLine("}");
+        }
         
         private void GenerateExpression(IRExpression expression)
         {
@@ -191,18 +247,24 @@ namespace Transpilador.Generator
 
         private void GenerateBinaryOperation(IRBinaryOperation binary)
         {
-            Write("(");
             GenerateExpression(binary.Left);
             Write($" {binary.Operation.ToJavaSymbol()} ");
             GenerateExpression(binary.Right);
-            Write(")");
         }
         private void GenerateUnaryOperation(IRUnaryOperation unary)
         {
-            Write("(");
-            Write(unary.ToSymbol());
-            GenerateExpression(unary.Operand);
-            Write(")");
+            if (unary.Operation == IRUnaryOperationType.Increment || unary.Operation == IRUnaryOperationType.Decrement)
+            {
+                GenerateExpression(unary.Operand);
+                Write(unary.ToSymbol());
+            }
+            else
+            {
+                Write("(");
+                Write(unary.ToSymbol());
+                GenerateExpression(unary.Operand);
+                Write(")");
+            }
         }
         private void GenerateConsoleInput(IRConsoleInput input)
         {
