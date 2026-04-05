@@ -58,19 +58,10 @@ Este proyecto se considera estable con el siguiente alcance.
 
 ### No Soportado
 
-- Arreglos multidimensionales
-- Colecciones avanzadas (Dictionary<TKey, TValue>, Queue<T>, Stack<T>, HashSet<T>, etc.)
-- Interpolación de cadenas
+- Colecciones avanzadas (Dictionary)
+- Interfaz
+- Polimorfismo
+- Manejo de erroes
+- Expresion de acceso
+- Dataset
 
-## Ejemplos Relevantes
-
-- Arreglos 1D: Examples/Input/arrays_1d_test.cs
-- Arreglos + Length: Examples/Input/arrays_length_test.cs
-- List<T> MVP: Examples/Input/list_mvp_test.cs
-- Métodos con parámetros: Examples/Input/method_parameters_test.cs
-- Casos no soportados: Examples/Unsupported/
-
-## Nota de Diseño
-
-El alcance está definido para mantener el proyecto simple, entendible y demostrable.
-Las construcciones fuera de este alcance deben reportarse como no soportadas de manera explícita.
