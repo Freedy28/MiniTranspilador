@@ -1,24 +1,25 @@
+using System.Collections.Generic;
 using Transpilador.Models.Base;
-using Transpilador.Models.Expressions;
-using Transpilador.Models.Statements;
-using Transpilador.Models.Structure;
 
-
-public class IRIf : IRStatement
+namespace Transpilador.Models.Statements
 {
-    public IRExpression Condition { get; set; }
-    public List<IRStatement> ThenBranch { get; set; }
-    public List<IRStatement> ElseBranch { get; set; }
-
-
-    public IRIf(IRExpression condition)
+    public class IRIf : IRStatement
     {
-        Condition = condition;
-        ThenBranch = new List<IRStatement>();
-        ElseBranch = new List<IRStatement>();
-    }
+        public IRExpression Condition { get; set; }
+        public List<IRStatement> ThenBranch { get; set; }
+        public List<IRStatement> ElseBranch { get; set; }
 
+        public IRIf(IRExpression condition)
+        {
+            Condition = condition;
+            ThenBranch = new List<IRStatement>();
+            ElseBranch = new List<IRStatement>();
+        }
+    }
 }
+
+
+
 
 
 

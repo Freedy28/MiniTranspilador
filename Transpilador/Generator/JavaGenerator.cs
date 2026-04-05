@@ -27,9 +27,22 @@ namespace Transpilador.Generator
                 WriteLine();
             }
 
-            if (ProgramNeedsScanner(program))
+            var needsListImports = ProgramNeedsListImports(program);
+            var needsScanner = ProgramNeedsScanner(program);
+
+            if (needsListImports)
+            {
+                WriteLine("import java.util.ArrayList;");
+                WriteLine("import java.util.List;");
+            }
+
+            if (needsScanner)
             {
                 WriteLine("import java.util.Scanner;");
+            }
+
+            if (needsListImports || needsScanner)
+            {
                 WriteLine();
             }
 
@@ -67,7 +80,8 @@ namespace Transpilador.Generator
                 var modifier = MapModifierToJava(method.AccessModifier);
                 var modifierStr = string.IsNullOrEmpty(modifier) ? "" : $"{modifier} ";
                 var staticMod = method.IsStatic ? "static " : "";
-                WriteLine($"{modifierStr}{staticMod}{returnType} {method.Name}() {{");
+                var parameters = string.Join(", ", method.Parameters.Select(p => $"{MapTypeToJava(p.Type)} {p.Name}"));
+                WriteLine($"{modifierStr}{staticMod}{returnType} {method.Name}({parameters}) {{");
             }
             Indent();
 
@@ -133,8 +147,6 @@ namespace Transpilador.Generator
             GenerateExpression(exprStmt.Expression);
             WriteLine(";");
         }
-        // Agregar este método en la clase JavaGenerator, 
-// después del método VisitAssignment
 
         protected override void VisitIf(IRIf ifStmt)
         {
@@ -180,6 +192,81 @@ namespace Transpilador.Generator
             Unindent();
             
             WriteLine("}");
+        }
+
+        protected override void VisitDoWhile(IRDoWhile doWhileLoop)
+        {
+            WriteLine("do {");
+            Indent();
+            foreach (var stmt in doWhileLoop.Body)
+            {
+                VisitStatement(stmt);
+            }
+            Unindent();
+
+            Write("} while (");
+            GenerateExpression(doWhileLoop.Condition);
+            WriteLine(");");
+        }
+
+        protected override void VisitForeach(IRForeach foreachLoop)
+        {
+            var itemType = MapTypeToJava(foreachLoop.ItemType);
+
+            Write($"for ({itemType} {foreachLoop.ItemName} : ");
+            GenerateExpression(foreachLoop.Collection);
+            WriteLine(") {");
+
+            Indent();
+            foreach (var stmt in foreachLoop.Body)
+            {
+                VisitStatement(stmt);
+            }
+            Unindent();
+
+            WriteLine("}");
+        }
+
+        protected override void VisitSwitch(IRSwitch switchStmt)
+        {
+            Write("switch (");
+            GenerateExpression(switchStmt.Expression);
+            WriteLine(") {");
+            Indent();
+
+            foreach (var switchCase in switchStmt.Cases)
+            {
+                if (switchCase.IsDefault)
+                {
+                    WriteLine("default:");
+                }
+                else
+                {
+                    Write("case ");
+                    GenerateExpression(switchCase.Label);
+                    WriteLine(":");
+                }
+
+                Indent();
+                foreach (var stmt in switchCase.Body)
+                {
+                    VisitStatement(stmt);
+                }
+                Unindent();
+            }
+
+            Unindent();
+            WriteLine("}");
+        }
+
+        protected override void VisitBreak(IRBreak breakStmt)
+        {
+            WriteLine("break;");
+        }
+
+        protected override void VisitContinue(IRContinue continueStmt)
+        {
+            WriteLine("continue;");
         }
 
         protected override void VisitFor(IRFor forLoop)
@@ -242,6 +329,21 @@ namespace Transpilador.Generator
                 case IRConsoleInput input:
                     GenerateConsoleInput(input);
                     break;
+                case IRArrayCreation arrayCreation:
+                    GenerateArrayCreation(arrayCreation);
+                    break;
+                case IRArrayAccess arrayAccess:
+                    GenerateArrayAccess(arrayAccess);
+                    break;
+                case IRArrayLength arrayLength:
+                    GenerateArrayLength(arrayLength);
+                    break;
+                case IRMethodCall methodCall:
+                    GenerateMethodCall(methodCall);
+                    break;
+                case IRListCreation listCreation:
+                    GenerateListCreation(listCreation);
+                    break;
             }
         }
 
@@ -279,6 +381,119 @@ namespace Transpilador.Generator
             Write(javaCode);
         }
 
+        private void GenerateArrayCreation(IRArrayCreation arrayCreation)
+        {
+            var elementType = MapTypeToJava(arrayCreation.ElementType);
+
+            if (arrayCreation.InitialValues != null && arrayCreation.InitialValues.Count > 0)
+            {
+                Write($"new {elementType}[] {{ ");
+                for (int i = 0; i < arrayCreation.InitialValues.Count; i++)
+                {
+                    if (i > 0) Write(", ");
+                    GenerateExpression(arrayCreation.InitialValues[i]);
+                }
+                Write(" }");
+                return;
+            }
+
+            Write($"new {elementType}[");
+            if (arrayCreation.SizeExpression != null)
+            {
+                GenerateExpression(arrayCreation.SizeExpression);
+            }
+            Write("]");
+        }
+
+        private void GenerateArrayAccess(IRArrayAccess arrayAccess)
+        {
+            GenerateExpression(arrayAccess.ArrayExpression);
+            Write("[");
+            GenerateExpression(arrayAccess.IndexExpression);
+            Write("]");
+        }
+
+        private void GenerateArrayLength(IRArrayLength arrayLength)
+        {
+            GenerateExpression(arrayLength.ArrayExpression);
+            Write(".length");
+        }
+
+        private void GenerateMethodCall(IRMethodCall methodCall)
+        {
+            Write($"{methodCall.MethodName}(");
+            for (int i = 0; i < methodCall.Arguments.Count; i++)
+            {
+                if (i > 0) Write(", ");
+                GenerateExpression(methodCall.Arguments[i]);
+            }
+            Write(")");
+        }
+
+        private void GenerateListCreation(IRListCreation listCreation)
+        {
+            var elementType = MapTypeToJavaBoxed(listCreation.ElementType);
+            Write($"new ArrayList<{elementType}>()");
+        }
+
+        private bool ProgramNeedsListImports(IRProgram program) =>
+            program.Classes.Any(c => ClassNeedsListImports(c));
+
+        private bool ClassNeedsListImports(IRClass cls) =>
+            cls.Fields.Any(f => IsListTypeName(f.Type))
+            || cls.Methods.Any(m => MethodNeedsListImports(m));
+
+        private bool MethodNeedsListImports(IRMethod method) =>
+            IsListTypeName(method.ReturnType)
+            || method.Parameters.Any(p => IsListTypeName(p.Type))
+            || method.Body.Any(StatementNeedsListImports)
+            || (method.ReturnExpression != null && ExpressionNeedsListImports(method.ReturnExpression));
+
+        private bool StatementNeedsListImports(IRStatement stmt) => stmt switch
+        {
+            IRVariableDeclaration decl => IsListTypeName(decl.Type)
+                || (decl.InitialValue != null && ExpressionNeedsListImports(decl.InitialValue)),
+            IRAssignment assign => ExpressionNeedsListImports(assign.Value),
+            IRExpressionStatement exprStmt => ExpressionNeedsListImports(exprStmt.Expression),
+            IRIf ifStmt => ExpressionNeedsListImports(ifStmt.Condition)
+                || ifStmt.ThenBranch.Any(StatementNeedsListImports)
+                || ifStmt.ElseBranch.Any(StatementNeedsListImports),
+            IRFor forStmt => (forStmt.Initializer != null && StatementNeedsListImports(forStmt.Initializer))
+                || (forStmt.Condition != null && ExpressionNeedsListImports(forStmt.Condition))
+                || (forStmt.Incrementor != null && ExpressionNeedsListImports(forStmt.Incrementor))
+                || forStmt.Body.Any(StatementNeedsListImports),
+            IRWhile whileStmt => ExpressionNeedsListImports(whileStmt.Condition)
+                || whileStmt.Body.Any(StatementNeedsListImports),
+            IRDoWhile doWhileStmt => ExpressionNeedsListImports(doWhileStmt.Condition)
+                || doWhileStmt.Body.Any(StatementNeedsListImports),
+            IRForeach foreachStmt => IsListTypeName(foreachStmt.ItemType)
+                || ExpressionNeedsListImports(foreachStmt.Collection)
+                || foreachStmt.Body.Any(StatementNeedsListImports),
+            IRSwitch switchStmt => ExpressionNeedsListImports(switchStmt.Expression)
+                || switchStmt.Cases.Any(c => (c.Label != null && ExpressionNeedsListImports(c.Label))
+                    || c.Body.Any(StatementNeedsListImports)),
+            _ => false
+        };
+
+        private bool ExpressionNeedsListImports(IRExpression expr) => expr switch
+        {
+            IRListCreation => true,
+            IRMethodCall methodCall => methodCall.MethodName.Contains(".add")
+                || methodCall.MethodName.Contains(".size")
+                || methodCall.MethodName.Contains(".get")
+                || methodCall.MethodName.Contains(".set"),
+            IRBinaryOperation bin => ExpressionNeedsListImports(bin.Left) || ExpressionNeedsListImports(bin.Right),
+            IRUnaryOperation unary => ExpressionNeedsListImports(unary.Operand),
+            IRArrayCreation arrayCreation =>
+                (arrayCreation.SizeExpression != null && ExpressionNeedsListImports(arrayCreation.SizeExpression))
+                || arrayCreation.InitialValues.Any(ExpressionNeedsListImports),
+            IRArrayAccess arrayAccess =>
+                ExpressionNeedsListImports(arrayAccess.ArrayExpression)
+                || ExpressionNeedsListImports(arrayAccess.IndexExpression),
+            IRArrayLength arrayLength => ExpressionNeedsListImports(arrayLength.ArrayExpression),
+            _ => false
+        };
+
         private bool ProgramNeedsScanner(IRProgram program) =>
             program.Classes.Any(c => ClassNeedsScanner(c));
 
@@ -293,7 +508,24 @@ namespace Transpilador.Generator
         {
             IRVariableDeclaration decl => decl.InitialValue != null && ExpressionNeedsScanner(decl.InitialValue),
             IRAssignment assign        => ExpressionNeedsScanner(assign.Value),
+            IRExpressionStatement exprStmt => ExpressionNeedsScanner(exprStmt.Expression),
             IRConsoleOutput output     => output.Argument != null && ExpressionNeedsScanner(output.Argument),
+            IRIf ifStmt => ExpressionNeedsScanner(ifStmt.Condition)
+                || ifStmt.ThenBranch.Any(StatementNeedsScanner)
+                || ifStmt.ElseBranch.Any(StatementNeedsScanner),
+            IRFor forStmt => (forStmt.Initializer != null && StatementNeedsScanner(forStmt.Initializer))
+                || (forStmt.Condition != null && ExpressionNeedsScanner(forStmt.Condition))
+                || (forStmt.Incrementor != null && ExpressionNeedsScanner(forStmt.Incrementor))
+                || forStmt.Body.Any(StatementNeedsScanner),
+            IRWhile whileStmt => ExpressionNeedsScanner(whileStmt.Condition)
+                || whileStmt.Body.Any(StatementNeedsScanner),
+            IRDoWhile doWhileStmt => ExpressionNeedsScanner(doWhileStmt.Condition)
+                || doWhileStmt.Body.Any(StatementNeedsScanner),
+            IRForeach foreachStmt => ExpressionNeedsScanner(foreachStmt.Collection)
+                || foreachStmt.Body.Any(StatementNeedsScanner),
+            IRSwitch switchStmt => ExpressionNeedsScanner(switchStmt.Expression)
+                || switchStmt.Cases.Any(c => (c.Label != null && ExpressionNeedsScanner(c.Label))
+                    || c.Body.Any(StatementNeedsScanner)),
             _                         => false
         };
 
@@ -302,11 +534,27 @@ namespace Transpilador.Generator
             IRConsoleInput                => true,
             IRBinaryOperation bin         => ExpressionNeedsScanner(bin.Left) || ExpressionNeedsScanner(bin.Right),
             IRUnaryOperation unary        => ExpressionNeedsScanner(unary.Operand),
+            IRArrayCreation arrayCreation =>
+                (arrayCreation.SizeExpression != null && ExpressionNeedsScanner(arrayCreation.SizeExpression))
+                || arrayCreation.InitialValues.Any(ExpressionNeedsScanner),
+            IRArrayAccess arrayAccess =>
+                ExpressionNeedsScanner(arrayAccess.ArrayExpression)
+                || ExpressionNeedsScanner(arrayAccess.IndexExpression),
+            IRArrayLength arrayLength =>
+                ExpressionNeedsScanner(arrayLength.ArrayExpression),
+            IRMethodCall methodCall =>
+                methodCall.Arguments.Any(ExpressionNeedsScanner),
             _                            => false
         };
 
         private string MapTypeToJava(string csharpType)
         {
+            if (IsListTypeName(csharpType))
+            {
+                var innerType = csharpType.Trim().Substring(5, csharpType.Trim().Length - 6).Trim();
+                return $"List<{MapTypeToJavaBoxed(innerType)}>";
+            }
+
             return csharpType switch
             {
                 "int" => "int",
@@ -318,6 +566,32 @@ namespace Transpilador.Generator
                 "bool" => "boolean",
                 _ => csharpType
             };
+        }
+
+        private string MapTypeToJavaBoxed(string csharpType)
+        {
+            if (IsListTypeName(csharpType))
+            {
+                return MapTypeToJava(csharpType);
+            }
+
+            return csharpType switch
+            {
+                "int" => "Integer",
+                "double" => "Double",
+                "float" => "Float",
+                "long" => "Long",
+                "string" => "String",
+                "bool" => "Boolean",
+                _ => MapTypeToJava(csharpType)
+            };
+        }
+
+        private bool IsListTypeName(string typeName)
+        {
+            if (string.IsNullOrWhiteSpace(typeName)) return false;
+            var trimmed = typeName.Trim();
+            return trimmed.StartsWith("List<", StringComparison.Ordinal) && trimmed.EndsWith(">", StringComparison.Ordinal);
         }
 
         private string MapModifierToJava(IRAccessModifier modifier)

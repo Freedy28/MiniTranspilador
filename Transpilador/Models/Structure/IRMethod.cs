@@ -10,6 +10,7 @@ namespace Transpilador.Models.Structure
         public IRAccessModifier AccessModifier { get; set; }
         public bool IsStatic { get; set; }
         public bool IsEntryPoint { get; set; }
+        public List<IRParameter> Parameters { get; set; }
         public List<IRStatement> Body { get; set; }
         public IRExpression ReturnExpression { get; set; }
         public IRMethod(string name, string returnType)
@@ -19,6 +20,7 @@ namespace Transpilador.Models.Structure
             AccessModifier = IRAccessModifier.Private;
             IsStatic = false;
             IsEntryPoint = false;
+            Parameters = new List<IRParameter>();
             Body = new List<IRStatement>();            
             ReturnExpression = null;
         }

@@ -64,6 +64,21 @@ namespace Transpilador.Generator.Base
                 case IRWhile whileStmt: 
                     VisitWhile(whileStmt);    
                     break;
+                case IRDoWhile doWhileStmt:
+                    VisitDoWhile(doWhileStmt);
+                    break;
+                case IRForeach foreachStmt:
+                    VisitForeach(foreachStmt);
+                    break;
+                case IRSwitch switchStmt:
+                    VisitSwitch(switchStmt);
+                    break;
+                case IRBreak breakStmt:
+                    VisitBreak(breakStmt);
+                    break;
+                case IRContinue continueStmt:
+                    VisitContinue(continueStmt);
+                    break;
             }
         }
 
@@ -76,5 +91,10 @@ namespace Transpilador.Generator.Base
         protected virtual void VisitIf(IRIf ifStmt) { }
         protected virtual void VisitFor(IRFor forStmt) { }
         protected virtual void VisitWhile(IRWhile whileStmt) { }
+        protected virtual void VisitDoWhile(IRDoWhile doWhileStmt) { }
+        protected virtual void VisitForeach(IRForeach foreachStmt) { }
+        protected virtual void VisitSwitch(IRSwitch switchStmt) { }
+        protected virtual void VisitBreak(IRBreak breakStmt) { }
+        protected virtual void VisitContinue(IRContinue continueStmt) { }
     }
 }

@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
@@ -112,6 +113,7 @@ namespace Transpilador.Parser
                 IsStatic = isStatic,
                 IsEntryPoint = isEntryPoint
             };
+            _currentMethod.Parameters.AddRange(ParseMethodParameters(node));
             _currentClass.Methods.Add(_currentMethod);
 
             if (node.Body != null)
@@ -135,7 +137,14 @@ namespace Transpilador.Parser
 
                 if (variable.Initializer != null)
                 {
-                    initialValue = ParseExpression(variable.Initializer.Value);
+                    if (IsArrayType(type) && variable.Initializer.Value is InitializerExpressionSyntax arrayInitializer)
+                    {
+                        initialValue = ParseArrayInitializer(arrayInitializer, GetArrayElementType(type));
+                    }
+                    else
+                    {
+                        initialValue = ParseExpression(variable.Initializer.Value);
+                    }
                 }
 
                 var declaration = new IRVariableDeclaration(
@@ -156,9 +165,36 @@ namespace Transpilador.Parser
 
             if (node.Expression is AssignmentExpressionSyntax assignment)
             {
-                var variableName = assignment.Left.ToString();
-                var value = ParseExpression(assignment.Right);
-                _currentMethod.Body.Add(new IRAssignment(variableName, value));
+                if (assignment.Left is ElementAccessExpressionSyntax elementAccess)
+                {
+                    var targetType = _semanticModel.GetTypeInfo(elementAccess.Expression).Type;
+                    if (IsListType(targetType))
+                    {
+                        if (elementAccess.ArgumentList.Arguments.Count != 1)
+                            throw new NotSupportedException("Solo se soporta indexador de una dimensión para List<T>.");
+
+                        var indexExpr = ParseExpression(elementAccess.ArgumentList.Arguments[0].Expression);
+                        var valueExpr = ParseExpression(assignment.Right);
+                        var setCall = new IRMethodCall(
+                            $"{elementAccess.Expression}.set",
+                            new List<IRExpression> { indexExpr, valueExpr },
+                            "void"
+                        );
+                        _currentMethod.Body.Add(new IRExpressionStatement(setCall));
+                    }
+                    else
+                    {
+                        var variableName = assignment.Left.ToString();
+                        var value = ParseExpression(assignment.Right);
+                        _currentMethod.Body.Add(new IRAssignment(variableName, value));
+                    }
+                }
+                else
+                {
+                    var variableName = assignment.Left.ToString();
+                    var value = ParseExpression(assignment.Right);
+                    _currentMethod.Body.Add(new IRAssignment(variableName, value));
+                }
             }
             else if (node.Expression is InvocationExpressionSyntax invocation)
             {
@@ -170,6 +206,10 @@ namespace Transpilador.Parser
                     if (invocation.ArgumentList.Arguments.Count > 0)
                         argument = ParseExpression(invocation.ArgumentList.Arguments[0].Expression);
                     _currentMethod.Body.Add(new IRConsoleOutput(argument, newLine));
+                }
+                else
+                {
+                    _currentMethod.Body.Add(new IRExpressionStatement(ParseInvocationExpression(invocation)));
                 }
             }
             else if (node.Expression is PostfixUnaryExpressionSyntax postfix)
@@ -195,7 +235,6 @@ namespace Transpilador.Parser
 
             base.VisitReturnStatement(node);
         }
-        // Agregar este método en la clase IRBuilderWalker, después de VisitReturnStatement
 
         public override void VisitIfStatement(IfStatementSyntax node)
         {
@@ -285,6 +324,99 @@ namespace Transpilador.Parser
             _currentMethod.Body.Add(forLoop);
         }
 
+        public override void VisitDoStatement(DoStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            var condition = ParseExpression(node.Condition);
+            var doWhileLoop = new IRDoWhile(condition);
+
+            var previousMethod = _currentMethod;
+            var tempMethod = new IRMethod("temp", "void");
+            _currentMethod = tempMethod;
+
+            Visit(node.Statement);
+
+            doWhileLoop.Body = new List<IRStatement>(tempMethod.Body);
+            _currentMethod = previousMethod;
+
+            _currentMethod.Body.Add(doWhileLoop);
+        }
+
+        public override void VisitForEachStatement(ForEachStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            var itemType = MapType(node.Type);
+            var collection = ParseExpression(node.Expression);
+            var foreachLoop = new IRForeach(itemType, node.Identifier.Text, collection);
+
+            var previousMethod = _currentMethod;
+            var tempMethod = new IRMethod("temp", "void");
+            _currentMethod = tempMethod;
+
+            Visit(node.Statement);
+
+            foreachLoop.Body = new List<IRStatement>(tempMethod.Body);
+            _currentMethod = previousMethod;
+
+            _currentMethod.Body.Add(foreachLoop);
+        }
+
+        public override void VisitSwitchStatement(SwitchStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            var switchStmt = new IRSwitch(ParseExpression(node.Expression));
+
+            foreach (var section in node.Sections)
+            {
+                foreach (var label in section.Labels)
+                {
+                    var switchCase = CreateSwitchCase(label);
+
+                    var previousMethod = _currentMethod;
+                    var tempMethod = new IRMethod("temp", "void");
+                    _currentMethod = tempMethod;
+
+                    foreach (var statement in section.Statements)
+                    {
+                        Visit(statement);
+                    }
+
+                    switchCase.Body = new List<IRStatement>(tempMethod.Body);
+                    _currentMethod = previousMethod;
+
+                    switchStmt.Cases.Add(switchCase);
+                }
+            }
+
+            _currentMethod.Body.Add(switchStmt);
+        }
+
+        public override void VisitBreakStatement(BreakStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+            _currentMethod.Body.Add(new IRBreak());
+        }
+
+        public override void VisitContinueStatement(ContinueStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+            _currentMethod.Body.Add(new IRContinue());
+        }
+
+        private IRSwitchCase CreateSwitchCase(SwitchLabelSyntax label)
+        {
+            if (label is CaseSwitchLabelSyntax caseLabel)
+                return new IRSwitchCase(ParseExpression(caseLabel.Value));
+
+            if (label is DefaultSwitchLabelSyntax)
+                return new IRSwitchCase(null, true);
+
+            throw new NotSupportedException($"Etiqueta switch no soportada: {label.GetType().Name}");
+        }
+
 
         private IRExpression ParseExpression(ExpressionSyntax expression)
         {
@@ -294,7 +426,8 @@ namespace Transpilador.Parser
                     return ParseLiteral(literal);
 
                 case IdentifierNameSyntax identifier:
-                    return new IRVariable(identifier.Identifier.Text, "int");
+                    var identifierType = _semanticModel.GetTypeInfo(identifier).Type;
+                    return new IRVariable(identifier.Identifier.Text, MapTypeSymbol(identifierType));
 
                 case BinaryExpressionSyntax binary:
                     return ParseBinaryExpression(binary);
@@ -308,12 +441,131 @@ namespace Transpilador.Parser
                 case InvocationExpressionSyntax invocation:
                     return ParseInvocationExpression(invocation);
                 case PostfixUnaryExpressionSyntax postfix:
-                    return ParsePostfixUnaryExpression(postfix);    
+                    return ParsePostfixUnaryExpression(postfix);
+                case ArrayCreationExpressionSyntax arrayCreation:
+                    return ParseArrayCreationExpression(arrayCreation);
+                case ImplicitArrayCreationExpressionSyntax implicitArray:
+                    return ParseImplicitArrayCreationExpression(implicitArray);
+                case ElementAccessExpressionSyntax elementAccess:
+                    return ParseElementAccessExpression(elementAccess);
+                case MemberAccessExpressionSyntax memberAccess:
+                    return ParseMemberAccessExpression(memberAccess);
+                case ObjectCreationExpressionSyntax objectCreation:
+                    return ParseObjectCreationExpression(objectCreation);
 
                 default:
                     throw new NotSupportedException($"Expresión no soportada: {expression.GetType().Name}");
             }
         }
+
+        private IRExpression ParseObjectCreationExpression(ObjectCreationExpressionSyntax objectCreation)
+        {
+            var createdType = _semanticModel.GetTypeInfo(objectCreation).Type;
+
+            if (IsListType(createdType))
+            {
+                if (objectCreation.Initializer != null && objectCreation.Initializer.Expressions.Count > 0)
+                    throw new NotSupportedException("Inicializador de List<T> no soportado. Usa Add().");
+
+                var namedType = createdType as INamedTypeSymbol;
+                var elementType = namedType != null && namedType.TypeArguments.Length > 0
+                    ? MapTypeSymbol(namedType.TypeArguments[0])
+                    : "int";
+
+                return new IRListCreation(elementType);
+            }
+
+            throw new NotSupportedException($"Creación de objeto no soportada: {objectCreation.Type}");
+        }
+
+        private IRArrayCreation ParseArrayInitializer(InitializerExpressionSyntax initializer, string elementType)
+        {
+            var values = new List<IRExpression>();
+            foreach (var expr in initializer.Expressions)
+            {
+                values.Add(ParseExpression(expr));
+            }
+
+            return new IRArrayCreation(elementType, null, values);
+        }
+
+        private IRArrayCreation ParseArrayCreationExpression(ArrayCreationExpressionSyntax arrayCreation)
+        {
+            if (arrayCreation.Type.RankSpecifiers.Count != 1 || arrayCreation.Type.RankSpecifiers[0].Rank != 1)
+                throw new NotSupportedException("Solo se soportan arreglos de una dimensión.");
+
+            var elementType = MapType(arrayCreation.Type.ElementType);
+            IRExpression sizeExpression = null;
+
+            var rank = arrayCreation.Type.RankSpecifiers.FirstOrDefault();
+            if (rank != null && rank.Sizes.Count > 0 && rank.Sizes[0] is not OmittedArraySizeExpressionSyntax)
+            {
+                sizeExpression = ParseExpression(rank.Sizes[0]);
+            }
+
+            if (arrayCreation.Initializer != null)
+            {
+                return ParseArrayInitializer(arrayCreation.Initializer, elementType);
+            }
+
+            return new IRArrayCreation(elementType, sizeExpression);
+        }
+
+        private IRArrayCreation ParseImplicitArrayCreationExpression(ImplicitArrayCreationExpressionSyntax implicitArray)
+        {
+            var values = new List<IRExpression>();
+            foreach (var expr in implicitArray.Initializer.Expressions)
+            {
+                values.Add(ParseExpression(expr));
+            }
+
+            var elementType = values.Count > 0 ? values[0].Type : "int";
+            return new IRArrayCreation(elementType, null, values);
+        }
+
+        private IRExpression ParseElementAccessExpression(ElementAccessExpressionSyntax elementAccess)
+        {
+            if (elementAccess.ArgumentList.Arguments.Count != 1)
+                throw new NotSupportedException("Solo se soporta indexador de una dimensión.");
+
+            var targetType = _semanticModel.GetTypeInfo(elementAccess.Expression).Type;
+            if (IsListType(targetType))
+            {
+                var indexExpr = ParseExpression(elementAccess.ArgumentList.Arguments[0].Expression);
+                var listAccessType = MapTypeSymbol(_semanticModel.GetTypeInfo(elementAccess).Type);
+                return new IRMethodCall($"{elementAccess.Expression}.get", new List<IRExpression> { indexExpr }, listAccessType);
+            }
+
+            var arrayExpression = ParseExpression(elementAccess.Expression);
+            var indexExpression = ParseExpression(elementAccess.ArgumentList.Arguments[0].Expression);
+            var accessType = MapTypeSymbol(_semanticModel.GetTypeInfo(elementAccess).Type);
+
+            return new IRArrayAccess(arrayExpression, indexExpression, accessType);
+        }
+
+        private IRExpression ParseMemberAccessExpression(MemberAccessExpressionSyntax memberAccess)
+        {
+            if (memberAccess.Name.Identifier.Text == "Length")
+            {
+                var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                if (targetType is IArrayTypeSymbol)
+                {
+                    return new IRArrayLength(ParseExpression(memberAccess.Expression));
+                }
+            }
+
+            if (memberAccess.Name.Identifier.Text == "Count")
+            {
+                var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                if (IsListType(targetType))
+                {
+                    return new IRMethodCall($"{memberAccess.Expression}.size", new List<IRExpression>(), "int");
+                }
+            }
+
+            throw new NotSupportedException($"Acceso de miembro no soportado: {memberAccess}");
+        }
+
         private IRUnaryOperation ParsePostfixUnaryExpression(PostfixUnaryExpressionSyntax postfix)
         {
             var operand = ParseExpression(postfix.Operand);
@@ -348,7 +600,39 @@ namespace Transpilador.Parser
                 };
             }
 
-            throw new NotSupportedException($"Invocación no soportada: {methodName}");
+            var parsedArgs = new List<IRExpression>();
+            foreach (var arg in args)
+            {
+                parsedArgs.Add(ParseExpression(arg.Expression));
+            }
+
+            if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
+            {
+                var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+                if (IsListType(targetType) && memberAccess.Name.Identifier.Text == "Add")
+                {
+                    methodName = $"{memberAccess.Expression}.add";
+                }
+            }
+
+            var returnType = MapTypeSymbol(_semanticModel.GetTypeInfo(invocation).Type);
+            return new IRMethodCall(methodName, parsedArgs, returnType);
+        }
+
+        private List<IRParameter> ParseMethodParameters(MethodDeclarationSyntax node)
+        {
+            var parameters = new List<IRParameter>();
+
+            foreach (var parameter in node.ParameterList.Parameters)
+            {
+                if (parameter.Type == null)
+                    throw new NotSupportedException($"Parámetro sin tipo no soportado: {parameter.Identifier.Text}");
+
+                var type = MapType(parameter.Type);
+                parameters.Add(new IRParameter(parameter.Identifier.Text, type));
+            }
+
+            return parameters;
         }
 
 
@@ -432,6 +716,46 @@ namespace Transpilador.Parser
             };
         }
 
+        private string MapTypeSymbol(ITypeSymbol typeSymbol)
+        {
+            if (typeSymbol == null) return "int";
+
+            if (typeSymbol is IArrayTypeSymbol arrayType)
+            {
+                return $"{MapTypeSymbol(arrayType.ElementType)}[]";
+            }
+
+            return typeSymbol.SpecialType switch
+            {
+                SpecialType.System_Int32 => "int",
+                SpecialType.System_Double => "double",
+                SpecialType.System_Single => "float",
+                SpecialType.System_Int64 => "long",
+                SpecialType.System_String => "string",
+                SpecialType.System_Boolean => "bool",
+                SpecialType.System_Void => "void",
+                _ => typeSymbol.ToDisplayString(SymbolDisplayFormat.MinimallyQualifiedFormat)
+            };
+        }
+
+        private bool IsArrayType(string type)
+        {
+            return type != null && type.EndsWith("[]", StringComparison.Ordinal);
+        }
+
+        private string GetArrayElementType(string arrayType)
+        {
+            if (!IsArrayType(arrayType)) return arrayType;
+            return arrayType.Substring(0, arrayType.Length - 2);
+        }
+
+        private bool IsListType(ITypeSymbol typeSymbol)
+        {
+            return typeSymbol is INamedTypeSymbol named
+                && named.Name == "List"
+                && named.ContainingNamespace?.ToDisplayString() == "System.Collections.Generic";
+        }
+
         private string MapSpecialType(string specialType)
         {
             return specialType switch
@@ -473,7 +797,16 @@ namespace Transpilador.Parser
             {
                 IRExpression initialValue = null;
                 if (variable.Initializer != null)
-                    initialValue = ParseExpression(variable.Initializer.Value);
+                {
+                    if (IsArrayType(type) && variable.Initializer.Value is InitializerExpressionSyntax arrayInitializer)
+                    {
+                        initialValue = ParseArrayInitializer(arrayInitializer, GetArrayElementType(type));
+                    }
+                    else
+                    {
+                        initialValue = ParseExpression(variable.Initializer.Value);
+                    }
+                }
 
                 var field = new IRField(variable.Identifier.Text, type)
                 {
