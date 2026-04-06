@@ -55,7 +55,10 @@ namespace Transpilador.Generator
         {
             var modifier = MapModifierToJava(irClass.AccessModifier);
             var modifierStr = string.IsNullOrEmpty(modifier) ? "" : $"{modifier} ";
-            WriteLine($"{modifierStr}class {irClass.Name} {{");
+            var abstractStr = irClass.IsAbstract ? "abstract " : "";
+            var extendsStr = irClass.BaseClass != null ? $" extends {irClass.BaseClass}" : "";
+            var implementsStr = irClass.Interfaces.Count > 0 ? $" implements {string.Join(", ", irClass.Interfaces)}" : "";
+            WriteLine($"{modifierStr}{abstractStr}class {irClass.Name}{extendsStr}{implementsStr} {{");
             Indent();
 
             if (ClassNeedsScanner(irClass))
@@ -70,6 +73,40 @@ namespace Transpilador.Generator
 
         public override void VisitMethod(IRMethod method)
         {
+            var modifier = MapModifierToJava(method.AccessModifier);
+            var modifierStr = string.IsNullOrEmpty(modifier) ? "" : $"{modifier} ";
+            var parameters = string.Join(", ", method.Parameters.Select(p => $"{MapTypeToJava(p.Type)} {p.Name}"));
+
+            if (method.IsConstructor)
+            {
+                WriteLine($"{modifierStr}{method.Name}({parameters}) {{");
+                Indent();
+
+                if (method.BaseCallArguments.Count > 0)
+                {
+                    Write("super(");
+                    for (int i = 0; i < method.BaseCallArguments.Count; i++)
+                    {
+                        if (i > 0) Write(", ");
+                        GenerateExpression(method.BaseCallArguments[i]);
+                    }
+                    WriteLine(");");
+                }
+
+                base.VisitMethod(method);
+                Unindent();
+                WriteLine("}");
+                return;
+            }
+
+            if (method.IsAbstract)
+            {
+                var returnType = MapTypeToJava(method.ReturnType);
+                var staticMod = method.IsStatic ? "static " : "";
+                WriteLine($"{modifierStr}{staticMod}abstract {returnType} {method.Name}({parameters});");
+                return;
+            }
+
             if (method.IsEntryPoint)
             {
                 WriteLine("public static void main(String[] args) {");
@@ -77,10 +114,9 @@ namespace Transpilador.Generator
             else
             {
                 var returnType = MapTypeToJava(method.ReturnType);
-                var modifier = MapModifierToJava(method.AccessModifier);
-                var modifierStr = string.IsNullOrEmpty(modifier) ? "" : $"{modifier} ";
                 var staticMod = method.IsStatic ? "static " : "";
-                var parameters = string.Join(", ", method.Parameters.Select(p => $"{MapTypeToJava(p.Type)} {p.Name}"));
+                if (method.IsOverride)
+                    WriteLine("@Override");
                 WriteLine($"{modifierStr}{staticMod}{returnType} {method.Name}({parameters}) {{");
             }
             Indent();
@@ -344,6 +380,15 @@ namespace Transpilador.Generator
                 case IRListCreation listCreation:
                     GenerateListCreation(listCreation);
                     break;
+                case IRObjectCreation objectCreation:
+                    GenerateObjectCreation(objectCreation);
+                    break;
+                case IRTypeCheck typeCheck:
+                    GenerateTypeCheck(typeCheck);
+                    break;
+                case IRCastExpression castExpr:
+                    GenerateCastExpression(castExpr);
+                    break;
             }
         }
 
@@ -436,6 +481,30 @@ namespace Transpilador.Generator
             Write($"new ArrayList<{elementType}>()");
         }
 
+        private void GenerateObjectCreation(IRObjectCreation objectCreation)
+        {
+            Write($"new {objectCreation.ClassName}(");
+            for (int i = 0; i < objectCreation.Arguments.Count; i++)
+            {
+                if (i > 0) Write(", ");
+                GenerateExpression(objectCreation.Arguments[i]);
+            }
+            Write(")");
+        }
+
+        private void GenerateTypeCheck(IRTypeCheck typeCheck)
+        {
+            GenerateExpression(typeCheck.Expression);
+            Write($" instanceof {typeCheck.TargetType}");
+        }
+
+        private void GenerateCastExpression(IRCastExpression castExpr)
+        {
+            Write($"({MapTypeToJava(castExpr.TargetType)})(");
+            GenerateExpression(castExpr.Expression);
+            Write(")");
+        }
+
         private bool ProgramNeedsListImports(IRProgram program) =>
             program.Classes.Any(c => ClassNeedsListImports(c));
 
@@ -491,6 +560,9 @@ namespace Transpilador.Generator
                 ExpressionNeedsListImports(arrayAccess.ArrayExpression)
                 || ExpressionNeedsListImports(arrayAccess.IndexExpression),
             IRArrayLength arrayLength => ExpressionNeedsListImports(arrayLength.ArrayExpression),
+            IRObjectCreation objCreation => objCreation.Arguments.Any(ExpressionNeedsListImports),
+            IRTypeCheck typeCheck => ExpressionNeedsListImports(typeCheck.Expression),
+            IRCastExpression castExpr => ExpressionNeedsListImports(castExpr.Expression),
             _ => false
         };
 
@@ -544,6 +616,9 @@ namespace Transpilador.Generator
                 ExpressionNeedsScanner(arrayLength.ArrayExpression),
             IRMethodCall methodCall =>
                 methodCall.Arguments.Any(ExpressionNeedsScanner),
+            IRObjectCreation objCreation => objCreation.Arguments.Any(ExpressionNeedsScanner),
+            IRTypeCheck typeCheck => ExpressionNeedsScanner(typeCheck.Expression),
+            IRCastExpression castExpr => ExpressionNeedsScanner(castExpr.Expression),
             _                            => false
         };
 

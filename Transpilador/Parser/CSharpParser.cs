@@ -91,8 +91,25 @@ namespace Transpilador.Parser
         {
             _currentClass = new IRClass(node.Identifier.Text)
             {
-                AccessModifier = ParseAccessModifier(node.Modifiers)
+                AccessModifier = ParseAccessModifier(node.Modifiers),
+                IsAbstract = node.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword))
             };
+
+            if (node.BaseList != null)
+            {
+                foreach (var baseType in node.BaseList.Types)
+                {
+                    var typeName = baseType.Type.ToString();
+                    var typeSymbol = _semanticModel.GetSymbolInfo(baseType.Type).Symbol as INamedTypeSymbol;
+                    bool isInterface = typeSymbol?.TypeKind == TypeKind.Interface
+                        || (typeSymbol == null && typeName.Length > 1 && typeName[0] == 'I' && char.IsUpper(typeName[1]));
+                    if (isInterface)
+                        _currentClass.Interfaces.Add(typeName);
+                    else
+                        _currentClass.BaseClass = typeName;
+                }
+            }
+
             Program.Classes.Add(_currentClass);
             base.VisitClassDeclaration(node);
             _currentClass = null;
@@ -111,9 +128,12 @@ namespace Transpilador.Parser
             {
                 AccessModifier = ParseAccessModifier(node.Modifiers),
                 IsStatic = isStatic,
-                IsEntryPoint = isEntryPoint
+                IsEntryPoint = isEntryPoint,
+                IsOverride = node.Modifiers.Any(m => m.IsKind(SyntaxKind.OverrideKeyword)),
+                IsVirtual = node.Modifiers.Any(m => m.IsKind(SyntaxKind.VirtualKeyword)),
+                IsAbstract = node.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword))
             };
-            _currentMethod.Parameters.AddRange(ParseMethodParameters(node));
+            _currentMethod.Parameters.AddRange(ParseMethodParameters(node.ParameterList));
             _currentClass.Methods.Add(_currentMethod);
 
             if (node.Body != null)
@@ -124,6 +144,33 @@ namespace Transpilador.Parser
             _currentMethod = null;
         }
         
+
+        public override void VisitConstructorDeclaration(ConstructorDeclarationSyntax node)
+        {
+            if (_currentClass == null) return;
+
+            _currentMethod = new IRMethod(node.Identifier.Text, "void")
+            {
+                AccessModifier = ParseAccessModifier(node.Modifiers),
+                IsConstructor = true
+            };
+            _currentMethod.Parameters.AddRange(ParseMethodParameters(node.ParameterList));
+
+            if (node.Initializer != null && node.Initializer.IsKind(SyntaxKind.BaseConstructorInitializer))
+            {
+                foreach (var arg in node.Initializer.ArgumentList.Arguments)
+                    _currentMethod.BaseCallArguments.Add(ParseExpression(arg.Expression));
+            }
+
+            _currentClass.Methods.Add(_currentMethod);
+
+            if (node.Body != null)
+            {
+                base.VisitConstructorDeclaration(node);
+            }
+
+            _currentMethod = null;
+        }
 
         public override void VisitLocalDeclarationStatement(LocalDeclarationStatementSyntax node)
         {
@@ -452,6 +499,10 @@ namespace Transpilador.Parser
                     return ParseMemberAccessExpression(memberAccess);
                 case ObjectCreationExpressionSyntax objectCreation:
                     return ParseObjectCreationExpression(objectCreation);
+                case IsPatternExpressionSyntax isPattern:
+                    return ParseTypeCheckExpression(isPattern);
+                case CastExpressionSyntax cast:
+                    return ParseCastExpression(cast);
 
                 default:
                     throw new NotSupportedException($"Expresión no soportada: {expression.GetType().Name}");
@@ -475,7 +526,32 @@ namespace Transpilador.Parser
                 return new IRListCreation(elementType);
             }
 
-            throw new NotSupportedException($"Creación de objeto no soportada: {objectCreation.Type}");
+            var className = objectCreation.Type.ToString();
+            var args = new List<IRExpression>();
+            if (objectCreation.ArgumentList != null)
+            {
+                foreach (var arg in objectCreation.ArgumentList.Arguments)
+                    args.Add(ParseExpression(arg.Expression));
+            }
+            return new IRObjectCreation(className, args);
+        }
+
+        private IRExpression ParseTypeCheckExpression(IsPatternExpressionSyntax isPattern)
+        {
+            var expression = ParseExpression(isPattern.Expression);
+            if (isPattern.Pattern is TypePatternSyntax typePattern)
+            {
+                var typeName = typePattern.Type.ToString();
+                return new IRTypeCheck(expression, typeName);
+            }
+            throw new NotSupportedException("Solo se soporta la verificación de tipo simple (x is TipoX).");
+        }
+
+        private IRExpression ParseCastExpression(CastExpressionSyntax cast)
+        {
+            var expression = ParseExpression(cast.Expression);
+            var typeName = cast.Type.ToString();
+            return new IRCastExpression(typeName, expression);
         }
 
         private IRArrayCreation ParseArrayInitializer(InitializerExpressionSyntax initializer, string elementType)
@@ -613,17 +689,21 @@ namespace Transpilador.Parser
                 {
                     methodName = $"{memberAccess.Expression}.add";
                 }
+                else if (memberAccess.Expression is BaseExpressionSyntax)
+                {
+                    methodName = $"super.{memberAccess.Name.Identifier.Text}";
+                }
             }
 
             var returnType = MapTypeSymbol(_semanticModel.GetTypeInfo(invocation).Type);
             return new IRMethodCall(methodName, parsedArgs, returnType);
         }
 
-        private List<IRParameter> ParseMethodParameters(MethodDeclarationSyntax node)
+        private List<IRParameter> ParseMethodParameters(ParameterListSyntax parameterList)
         {
             var parameters = new List<IRParameter>();
 
-            foreach (var parameter in node.ParameterList.Parameters)
+            foreach (var parameter in parameterList.Parameters)
             {
                 if (parameter.Type == null)
                     throw new NotSupportedException($"Parámetro sin tipo no soportado: {parameter.Identifier.Text}");
@@ -645,8 +725,22 @@ namespace Transpilador.Parser
             return new IRLiteral(literal.Token.ValueText, MapSpecialType(type));
         }
 
-        private IRBinaryOperation ParseBinaryExpression(BinaryExpressionSyntax binary)
+        private IRExpression ParseBinaryExpression(BinaryExpressionSyntax binary)
         {
+            if (binary.OperatorToken.IsKind(SyntaxKind.AsKeyword))
+            {
+                var expr = ParseExpression(binary.Left);
+                var typeName = binary.Right.ToString();
+                return new IRCastExpression(typeName, expr);
+            }
+
+            if (binary.OperatorToken.IsKind(SyntaxKind.IsKeyword))
+            {
+                var expr = ParseExpression(binary.Left);
+                var typeName = binary.Right.ToString();
+                return new IRTypeCheck(expr, typeName);
+            }
+
             var left = ParseExpression(binary.Left);
             var right = ParseExpression(binary.Right);
             var operation = MapBinaryOperation(binary.OperatorToken.Kind());

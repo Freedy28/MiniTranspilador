@@ -10,6 +10,11 @@ namespace Transpilador.Models.Structure
         public IRAccessModifier AccessModifier { get; set; }
         public bool IsStatic { get; set; }
         public bool IsEntryPoint { get; set; }
+        public bool IsOverride { get; set; }
+        public bool IsVirtual { get; set; }
+        public bool IsAbstract { get; set; }
+        public bool IsConstructor { get; set; }
+        public List<IRExpression> BaseCallArguments { get; set; }
         public List<IRParameter> Parameters { get; set; }
         public List<IRStatement> Body { get; set; }
         public IRExpression ReturnExpression { get; set; }
@@ -20,6 +25,11 @@ namespace Transpilador.Models.Structure
             AccessModifier = IRAccessModifier.Private;
             IsStatic = false;
             IsEntryPoint = false;
+            IsOverride = false;
+            IsVirtual = false;
+            IsAbstract = false;
+            IsConstructor = false;
+            BaseCallArguments = new List<IRExpression>();
             Parameters = new List<IRParameter>();
             Body = new List<IRStatement>();            
             ReturnExpression = null;
