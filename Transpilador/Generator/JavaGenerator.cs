@@ -28,6 +28,7 @@ namespace Transpilador.Generator
             }
 
             var needsListImports = ProgramNeedsListImports(program);
+            var needsCollections = ProgramNeedsCollectionsImport(program);
             var needsScanner = ProgramNeedsScanner(program);
 
             if (needsListImports)
@@ -36,12 +37,17 @@ namespace Transpilador.Generator
                 WriteLine("import java.util.List;");
             }
 
+            if (needsCollections)
+            {
+                WriteLine("import java.util.Collections;");
+            }
+
             if (needsScanner)
             {
                 WriteLine("import java.util.Scanner;");
             }
 
-            if (needsListImports || needsScanner)
+            if (needsListImports || needsCollections || needsScanner)
             {
                 WriteLine();
             }
@@ -65,6 +71,25 @@ namespace Transpilador.Generator
                 WriteLine("private static Scanner scanner = new Scanner(System.in);");
 
             base.VisitClass(irClass);
+
+            Unindent();
+            WriteLine("}");
+            WriteLine();
+        }
+
+        public override void VisitInterface(IRInterface irInterface)
+        {
+            var modifier = MapModifierToJava(irInterface.AccessModifier);
+            var modifierStr = string.IsNullOrEmpty(modifier) ? "" : $"{modifier} ";
+            WriteLine($"{modifierStr}interface {irInterface.Name} {{");
+            Indent();
+
+            foreach (var method in irInterface.Methods)
+            {
+                var returnType = MapTypeToJava(method.ReturnType);
+                var parameters = string.Join(", ", method.Parameters.Select(p => $"{MapTypeToJava(p.Type)} {p.Name}"));
+                WriteLine($"{returnType} {method.Name}({parameters});");
+            }
 
             Unindent();
             WriteLine("}");
@@ -506,7 +531,9 @@ namespace Transpilador.Generator
         }
 
         private bool ProgramNeedsListImports(IRProgram program) =>
-            program.Classes.Any(c => ClassNeedsListImports(c));
+            program.Interfaces.Any(i => i.Methods.Any(m =>
+                IsListTypeName(m.ReturnType) || m.Parameters.Any(p => IsListTypeName(p.Type))))
+            || program.Classes.Any(c => ClassNeedsListImports(c));
 
         private bool ClassNeedsListImports(IRClass cls) =>
             cls.Fields.Any(f => IsListTypeName(f.Type))
@@ -564,6 +591,24 @@ namespace Transpilador.Generator
             IRTypeCheck typeCheck => ExpressionNeedsListImports(typeCheck.Expression),
             IRCastExpression castExpr => ExpressionNeedsListImports(castExpr.Expression),
             _ => false
+        };
+
+        private bool ProgramNeedsCollectionsImport(IRProgram program) =>
+            program.Classes.Any(c => c.Methods.Any(m => MethodNeedsCollectionsImport(m)));
+
+        private bool MethodNeedsCollectionsImport(IRMethod method) =>
+            method.Body.Any(StatementNeedsCollectionsImport);
+
+        private bool StatementNeedsCollectionsImport(IRStatement stmt) => stmt switch
+        {
+            IRExpressionStatement exprStmt => exprStmt.Expression is IRMethodCall mc && mc.MethodName == "Collections.sort",
+            IRIf ifStmt                    => ifStmt.ThenBranch.Any(StatementNeedsCollectionsImport)
+                                              || ifStmt.ElseBranch.Any(StatementNeedsCollectionsImport),
+            IRFor forStmt                  => forStmt.Body.Any(StatementNeedsCollectionsImport),
+            IRWhile whileStmt              => whileStmt.Body.Any(StatementNeedsCollectionsImport),
+            IRDoWhile doWhileStmt          => doWhileStmt.Body.Any(StatementNeedsCollectionsImport),
+            IRForeach foreachStmt          => foreachStmt.Body.Any(StatementNeedsCollectionsImport),
+            _                              => false
         };
 
         private bool ProgramNeedsScanner(IRProgram program) =>

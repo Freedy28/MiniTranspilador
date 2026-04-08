@@ -71,6 +71,7 @@ namespace Transpilador.Parser
     {
         private readonly SemanticModel _semanticModel;
         private IRClass _currentClass;
+        private IRInterface _currentInterface;
         private IRMethod _currentMethod;
 
         public IRProgram Program { get; }
@@ -115,9 +116,21 @@ namespace Transpilador.Parser
             _currentClass = null;
         }
 
+        public override void VisitInterfaceDeclaration(InterfaceDeclarationSyntax node)
+        {
+            _currentInterface = new IRInterface(node.Identifier.Text)
+            {
+                AccessModifier = ParseAccessModifier(node.Modifiers)
+            };
+
+            Program.Interfaces.Add(_currentInterface);
+            base.VisitInterfaceDeclaration(node);
+            _currentInterface = null;
+        }
+
         public override void VisitMethodDeclaration(MethodDeclarationSyntax node)
         {
-            if (_currentClass == null) return;
+            if (_currentClass == null && _currentInterface == null) return;
 
             var returnType = MapType(node.ReturnType);
             var methodName = node.Identifier.Text;
@@ -134,11 +147,18 @@ namespace Transpilador.Parser
                 IsAbstract = node.Modifiers.Any(m => m.IsKind(SyntaxKind.AbstractKeyword))
             };
             _currentMethod.Parameters.AddRange(ParseMethodParameters(node.ParameterList));
-            _currentClass.Methods.Add(_currentMethod);
 
-            if (node.Body != null)
+            if (_currentInterface != null)
             {
-                base.VisitMethodDeclaration(node);
+                _currentInterface.Methods.Add(_currentMethod);
+            }
+            else
+            {
+                _currentClass.Methods.Add(_currentMethod);
+                if (node.Body != null)
+                {
+                    base.VisitMethodDeclaration(node);
+                }
             }
 
             _currentMethod = null;
@@ -621,23 +641,23 @@ namespace Transpilador.Parser
 
         private IRExpression ParseMemberAccessExpression(MemberAccessExpressionSyntax memberAccess)
         {
-            if (memberAccess.Name.Identifier.Text == "Length")
+            var memberName = memberAccess.Name.Identifier.Text;
+            var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
+            var receiverText = memberAccess.Expression.ToString();
+
+            if (memberName == "Length")
             {
-                var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
                 if (targetType is IArrayTypeSymbol)
-                {
                     return new IRArrayLength(ParseExpression(memberAccess.Expression));
-                }
+                if (targetType?.SpecialType == SpecialType.System_String)
+                    return new IRMethodCall($"{receiverText}.length", new List<IRExpression>(), "int");
             }
 
-            if (memberAccess.Name.Identifier.Text == "Count")
-            {
-                var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
-                if (IsListType(targetType))
-                {
-                    return new IRMethodCall($"{memberAccess.Expression}.size", new List<IRExpression>(), "int");
-                }
-            }
+            if (memberName == "Count" && IsListType(targetType))
+                return new IRMethodCall($"{receiverText}.size", new List<IRExpression>(), "int");
+
+            if (receiverText == "Math" && (memberName == "PI" || memberName == "E"))
+                return new IRVariable($"Math.{memberName}", "double");
 
             throw new NotSupportedException($"Acceso de miembro no soportado: {memberAccess}");
         }
@@ -685,13 +705,86 @@ namespace Transpilador.Parser
             if (invocation.Expression is MemberAccessExpressionSyntax memberAccess)
             {
                 var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
-                if (IsListType(targetType) && memberAccess.Name.Identifier.Text == "Add")
+                var memberName = memberAccess.Name.Identifier.Text;
+                var receiverText = memberAccess.Expression.ToString();
+
+                if (IsListType(targetType))
                 {
-                    methodName = $"{memberAccess.Expression}.add";
+                    if (memberName == "Sort")
+                    {
+                        var listExpr = ParseExpression(memberAccess.Expression);
+                        return new IRMethodCall("Collections.sort", new List<IRExpression> { listExpr }, "void");
+                    }
+                    methodName = memberName switch
+                    {
+                        "Add"         => $"{receiverText}.add",
+                        "Remove"      => $"{receiverText}.remove",
+                        "RemoveAt"    => $"{receiverText}.remove",
+                        "Contains"    => $"{receiverText}.contains",
+                        "Clear"       => $"{receiverText}.clear",
+                        "IndexOf"     => $"{receiverText}.indexOf",
+                        "Insert"      => $"{receiverText}.add",
+                        "ToString"    => $"{receiverText}.toString",
+                        "Equals"      => $"{receiverText}.equals",
+                        "GetHashCode" => $"{receiverText}.hashCode",
+                        _             => methodName
+                    };
+                }
+                else if (receiverText == "Math")
+                {
+                    methodName = memberName switch
+                    {
+                        "Abs"     => "Math.abs",
+                        "Sqrt"    => "Math.sqrt",
+                        "Pow"     => "Math.pow",
+                        "Max"     => "Math.max",
+                        "Min"     => "Math.min",
+                        "Floor"   => "Math.floor",
+                        "Ceiling" => "Math.ceil",
+                        "Round"   => "Math.round",
+                        "Log"     => "Math.log",
+                        "Log10"   => "Math.log10",
+                        _         => methodName
+                    };
+                }
+                else if (targetType?.SpecialType == SpecialType.System_String)
+                {
+                    if (memberName == "Substring" && parsedArgs.Count == 2)
+                    {
+                        var endIndex = new IRBinaryOperation(parsedArgs[0], parsedArgs[1], IROperationType.Add, "int");
+                        return new IRMethodCall($"{receiverText}.substring",
+                            new List<IRExpression> { parsedArgs[0], endIndex }, "string");
+                    }
+                    methodName = memberName switch
+                    {
+                        "ToUpper"    => $"{receiverText}.toUpperCase",
+                        "ToLower"    => $"{receiverText}.toLowerCase",
+                        "Trim"       => $"{receiverText}.trim",
+                        "Contains"   => $"{receiverText}.contains",
+                        "StartsWith" => $"{receiverText}.startsWith",
+                        "EndsWith"   => $"{receiverText}.endsWith",
+                        "Replace"    => $"{receiverText}.replace",
+                        "IndexOf"    => $"{receiverText}.indexOf",
+                        "Substring"  => $"{receiverText}.substring",
+                        "Split"      => $"{receiverText}.split",
+                        "ToString"   => $"{receiverText}.toString",
+                        "Equals"     => $"{receiverText}.equals",
+                        _            => methodName
+                    };
                 }
                 else if (memberAccess.Expression is BaseExpressionSyntax)
                 {
-                    methodName = $"super.{memberAccess.Name.Identifier.Text}";
+                    methodName = $"super.{memberName}";
+                }
+                else
+                {
+                    methodName = memberName switch
+                    {
+                        "ToString"    => $"{receiverText}.toString",
+                        "Equals"      => $"{receiverText}.equals",
+                        "GetHashCode" => $"{receiverText}.hashCode",
+                        _             => methodName
+                    };
                 }
             }
 

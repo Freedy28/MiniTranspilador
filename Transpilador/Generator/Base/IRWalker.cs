@@ -7,12 +7,25 @@ namespace Transpilador.Generator.Base
     // Clase abstracta: Es una plantilla que otros heredarán
     public abstract class IRWalker
     {
-        // 1. Recorre las clases del programa
+        // 1. Recorre las interfaces y clases del programa
         public virtual void VisitProgram(IRProgram program)
         {
+            foreach (var irInterface in program.Interfaces)
+            {
+                VisitInterface(irInterface);
+            }
             foreach (var irClass in program.Classes)
             {
                 VisitClass(irClass);
+            }
+        }
+
+        // 1b. Recorre los métodos de una interfaz
+        public virtual void VisitInterface(IRInterface irInterface)
+        {
+            foreach (var method in irInterface.Methods)
+            {
+                VisitMethod(method);
             }
         }
 
