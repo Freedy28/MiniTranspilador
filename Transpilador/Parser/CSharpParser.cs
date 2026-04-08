@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -224,7 +221,7 @@ namespace Transpilador.Parser
                         var valueExpr = ParseExpression(assignment.Right);
                         var setCall = new IRMethodCall(
                             $"{elementAccess.Expression}.set",
-                            new List<IRExpression> { indexExpr, valueExpr },
+                            [indexExpr, valueExpr],
                             "void"
                         );
                         _currentMethod.Body.Add(new IRExpressionStatement(setCall));
@@ -609,7 +606,7 @@ namespace Transpilador.Parser
             {
                 var indexExpr = ParseExpression(elementAccess.ArgumentList.Arguments[0].Expression);
                 var listAccessType = MapTypeSymbol(_semanticModel.GetTypeInfo(elementAccess).Type);
-                return new IRMethodCall($"{elementAccess.Expression}.get", new List<IRExpression> { indexExpr }, listAccessType);
+                return new IRMethodCall($"{elementAccess.Expression}.get", [indexExpr], listAccessType);
             }
 
             var arrayExpression = ParseExpression(elementAccess.Expression);
@@ -635,7 +632,7 @@ namespace Transpilador.Parser
                 var targetType = _semanticModel.GetTypeInfo(memberAccess.Expression).Type;
                 if (IsListType(targetType))
                 {
-                    return new IRMethodCall($"{memberAccess.Expression}.size", new List<IRExpression>(), "int");
+                    return new IRMethodCall($"{memberAccess.Expression}.size", [], "int");
                 }
             }
 

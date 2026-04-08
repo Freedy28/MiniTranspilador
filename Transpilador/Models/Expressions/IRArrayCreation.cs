@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Expressions
@@ -15,7 +14,7 @@ namespace Transpilador.Models.Expressions
         {
             ElementType = elementType;
             SizeExpression = sizeExpression;
-            InitialValues = initialValues ?? new List<IRExpression>();
+            InitialValues = initialValues ?? [];
         }
     }
 }

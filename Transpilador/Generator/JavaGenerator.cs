@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using System.Text;
 using Transpilador.Generator.Base;
 using Transpilador.Models;

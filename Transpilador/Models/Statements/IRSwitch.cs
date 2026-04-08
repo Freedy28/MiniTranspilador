@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Statements
@@ -11,7 +10,7 @@ namespace Transpilador.Models.Statements
         public IRSwitch(IRExpression expression)
         {
             Expression = expression;
-            Cases = new List<IRSwitchCase>();
+            Cases = [];
         }
     }
 
@@ -25,7 +24,7 @@ namespace Transpilador.Models.Statements
         {
             IsDefault = isDefault;
             Label = label;
-            Body = new List<IRStatement>();
+            Body = [];
         }
     }
 }

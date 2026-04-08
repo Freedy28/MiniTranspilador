@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Statements
@@ -15,7 +14,7 @@ namespace Transpilador.Models.Statements
             ItemType = itemType;
             ItemName = itemName;
             Collection = collection;
-            Body = new List<IRStatement>();
+            Body = [];
         }
     }
 }

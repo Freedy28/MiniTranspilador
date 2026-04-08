@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Structure
@@ -29,9 +28,9 @@ namespace Transpilador.Models.Structure
             IsVirtual = false;
             IsAbstract = false;
             IsConstructor = false;
-            BaseCallArguments = new List<IRExpression>();
-            Parameters = new List<IRParameter>();
-            Body = new List<IRStatement>();            
+            BaseCallArguments = [];
+            Parameters = [];
+            Body = [];            
             ReturnExpression = null;
         }
     }

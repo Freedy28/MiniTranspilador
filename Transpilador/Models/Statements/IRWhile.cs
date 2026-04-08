@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Statements
@@ -11,7 +10,7 @@ namespace Transpilador.Models.Statements
         public IRWhile(IRExpression condition)
         {
             Condition = condition;
-            Body = new List<IRStatement>();
+            Body = [];
         }
     }
 }

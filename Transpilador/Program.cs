@@ -97,7 +97,7 @@ app.MapPost("/api/transpile", (TranspileRequest request, ILogger<Program> log) =
         log.LogWarning("[/api/transpile] Construcción no soportada: {Message}", ex.Message);
         return Results.Json(
             new ApiError("unsupported", "Construcción de C# no soportada por el transpilador.",
-                new List<ErrorDetail> { new ErrorDetail("UNSUPPORTED", ex.Message) }),
+                [new ErrorDetail("UNSUPPORTED", ex.Message)]),
             statusCode: StatusCodes.Status422UnprocessableEntity);
     }
 });
@@ -159,7 +159,7 @@ app.MapPost("/api/transpile/file", async (IFormFile file, ILogger<Program> log) 
         log.LogWarning("[/api/transpile/file] Construcción no soportada: {Message}", ex.Message);
         return Results.Json(
             new ApiError("unsupported", "Construcción de C# no soportada por el transpilador.",
-                new List<ErrorDetail> { new ErrorDetail("UNSUPPORTED", ex.Message) }),
+                [new ErrorDetail("UNSUPPORTED", ex.Message)]),
             statusCode: StatusCodes.Status422UnprocessableEntity);
     }
 }).DisableAntiforgery();

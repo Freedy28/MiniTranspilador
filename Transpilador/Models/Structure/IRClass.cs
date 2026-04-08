@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Structure
@@ -19,9 +18,9 @@ namespace Transpilador.Models.Structure
             AccessModifier = IRAccessModifier.Internal;
             IsAbstract = false;
             BaseClass = null;
-            Interfaces = new List<string>();
-            Fields = new List<IRField>();
-            Methods = new List<IRMethod>();
+            Interfaces = [];
+            Fields = [];
+            Methods = [];
         }
     }
 }
