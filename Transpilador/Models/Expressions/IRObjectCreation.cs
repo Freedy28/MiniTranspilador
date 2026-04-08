@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Expressions
@@ -12,7 +11,7 @@ namespace Transpilador.Models.Expressions
         public IRObjectCreation(string className, List<IRExpression> arguments)
         {
             ClassName = className;
-            Arguments = arguments ?? new List<IRExpression>();
+            Arguments = arguments ?? [];
         }
     }
 }

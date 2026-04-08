@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Statements
@@ -15,7 +14,7 @@ namespace Transpilador.Models.Statements
             Initializer = initializer;
             Condition = condition;
             Incrementor = incrementor;
-            Body = new List<IRStatement>();
+            Body = [];
         }
     }
 }

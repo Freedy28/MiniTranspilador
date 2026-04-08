@@ -9,6 +9,6 @@ public class TranspileException : Exception
         : base(message)
     {
         ErrorType = errorType;
-        Details = details ?? new List<ErrorDetail>();
+        Details = details ?? [];
     }
 }

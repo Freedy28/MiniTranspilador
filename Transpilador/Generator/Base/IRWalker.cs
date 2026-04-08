@@ -92,6 +92,15 @@ namespace Transpilador.Generator.Base
                 case IRContinue continueStmt:
                     VisitContinue(continueStmt);
                     break;
+                case IRTryCatch tryCatch:
+                    VisitTryCatch(tryCatch);
+                    break;
+                case IRThrow throwStmt:
+                    VisitThrow(throwStmt);
+                    break;
+                case IRReturn returnStmt:
+                    VisitReturn(returnStmt);
+                    break;
             }
         }
 
@@ -109,5 +118,8 @@ namespace Transpilador.Generator.Base
         protected virtual void VisitSwitch(IRSwitch switchStmt) { }
         protected virtual void VisitBreak(IRBreak breakStmt) { }
         protected virtual void VisitContinue(IRContinue continueStmt) { }
+        protected virtual void VisitTryCatch(IRTryCatch tryCatch) { }
+        protected virtual void VisitThrow(IRThrow throwStmt) { }
+        protected virtual void VisitReturn(IRReturn returnStmt) { }
     }
 }

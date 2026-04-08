@@ -1,5 +1,3 @@
-using System.Collections.Generic;
-
 namespace Transpilador.Models.Structure
 {
     public class IRProgram

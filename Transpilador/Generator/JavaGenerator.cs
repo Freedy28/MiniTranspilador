@@ -1,5 +1,3 @@
-using System;
-using System.Linq;
 using System.Text;
 using Transpilador.Generator.Base;
 using Transpilador.Models;
@@ -147,13 +145,6 @@ namespace Transpilador.Generator
             Indent();
 
             base.VisitMethod(method);
-
-            if (method.ReturnExpression != null)
-            {
-                Write("return ");
-                GenerateExpression(method.ReturnExpression); 
-                WriteLine(";");
-            }
             
             Unindent();
             WriteLine("}"); 
@@ -329,6 +320,60 @@ namespace Transpilador.Generator
         {
             WriteLine("continue;");
         }
+
+        protected override void VisitTryCatch(IRTryCatch tryCatch)
+        {
+            WriteLine("try {");
+            Indent();
+            foreach (var stmt in tryCatch.TryBody) VisitStatement(stmt);
+            Unindent();
+
+            foreach (var clause in tryCatch.CatchClauses)
+            {
+                WriteLine($"}} catch ({clause.ExceptionType} {clause.VariableName}) {{");
+                Indent();
+                foreach (var stmt in clause.Body) VisitStatement(stmt);
+                Unindent();
+            }
+
+            if (tryCatch.FinallyBody != null)
+            {
+                WriteLine("} finally {");
+                Indent();
+                foreach (var stmt in tryCatch.FinallyBody) VisitStatement(stmt);
+                Unindent();
+            }
+
+            WriteLine("}");
+        }
+
+        protected override void VisitThrow(IRThrow throwStmt)
+        {
+            if (throwStmt.Expression == null)
+            {
+                WriteLine("throw;");
+                return;
+            }
+            Write("throw ");
+            GenerateExpression(throwStmt.Expression);
+            WriteLine(";");
+        }
+
+        protected override void VisitReturn(IRReturn returnStmt)
+        {
+            if (returnStmt.Expression == null)
+            {
+                WriteLine("return;");
+                return;
+            }
+            Write("return ");
+            GenerateExpression(returnStmt.Expression);
+            WriteLine(";");
+        }
+
+
+
+
 
         protected override void VisitFor(IRFor forLoop)
         {
@@ -508,7 +553,7 @@ namespace Transpilador.Generator
 
         private void GenerateObjectCreation(IRObjectCreation objectCreation)
         {
-            Write($"new {objectCreation.ClassName}(");
+            Write($"new {MapExceptionClassName(objectCreation.ClassName)}(");
             for (int i = 0; i < objectCreation.Arguments.Count; i++)
             {
                 if (i > 0) Write(", ");
@@ -665,6 +710,21 @@ namespace Transpilador.Generator
             IRTypeCheck typeCheck => ExpressionNeedsScanner(typeCheck.Expression),
             IRCastExpression castExpr => ExpressionNeedsScanner(castExpr.Expression),
             _                            => false
+        };
+
+        private static string MapExceptionClassName(string name) => name switch
+        {
+            "ArgumentException"         => "IllegalArgumentException",
+            "ArgumentNullException"      => "IllegalArgumentException",
+            "InvalidOperationException" => "IllegalStateException",
+            "NotImplementedException"   => "UnsupportedOperationException",
+            "NotSupportedException"     => "UnsupportedOperationException",
+            "IndexOutOfRangeException"  => "ArrayIndexOutOfBoundsException",
+            "NullReferenceException"    => "NullPointerException",
+            "FormatException"           => "NumberFormatException",
+            "DivideByZeroException"     => "ArithmeticException",
+            "OverflowException"         => "ArithmeticException",
+            _                           => name
         };
 
         private string MapTypeToJava(string csharpType)

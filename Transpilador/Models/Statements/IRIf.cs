@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using Transpilador.Models.Base;
 
 namespace Transpilador.Models.Statements
@@ -12,8 +11,8 @@ namespace Transpilador.Models.Statements
         public IRIf(IRExpression condition)
         {
             Condition = condition;
-            ThenBranch = new List<IRStatement>();
-            ElseBranch = new List<IRStatement>();
+            ThenBranch = [];
+            ElseBranch = [];
         }
     }
 }

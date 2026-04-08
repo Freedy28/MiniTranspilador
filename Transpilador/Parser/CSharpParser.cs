@@ -1,6 +1,3 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
@@ -73,6 +70,7 @@ namespace Transpilador.Parser
         private IRClass _currentClass;
         private IRInterface _currentInterface;
         private IRMethod _currentMethod;
+        private string? _currentCatchVariableName;
 
         public IRProgram Program { get; }
 
@@ -244,7 +242,7 @@ namespace Transpilador.Parser
                         var valueExpr = ParseExpression(assignment.Right);
                         var setCall = new IRMethodCall(
                             $"{elementAccess.Expression}.set",
-                            new List<IRExpression> { indexExpr, valueExpr },
+                            [indexExpr, valueExpr],
                             "void"
                         );
                         _currentMethod.Body.Add(new IRExpressionStatement(setCall));
@@ -295,12 +293,8 @@ namespace Transpilador.Parser
         {
             if (_currentMethod == null) return;
 
-            if (node.Expression != null)
-            {
-                _currentMethod.ReturnExpression = ParseExpression(node.Expression);
-            }
-
-            base.VisitReturnStatement(node);
+            IRExpression? expr = node.Expression != null ? ParseExpression(node.Expression) : null;
+            _currentMethod.Body.Add(new IRReturn(expr));
         }
 
         public override void VisitIfStatement(IfStatementSyntax node)
@@ -473,6 +467,84 @@ namespace Transpilador.Parser
             _currentMethod.Body.Add(new IRContinue());
         }
 
+        public override void VisitTryStatement(TryStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            var tryCatch = new IRTryCatch();
+
+            var previousMethod = _currentMethod;
+            var tempMethod = new IRMethod("temp", "void");
+            _currentMethod = tempMethod;
+            foreach (var stmt in node.Block.Statements) Visit(stmt);
+            tryCatch.TryBody = new List<IRStatement>(tempMethod.Body);
+            _currentMethod = previousMethod;
+
+            foreach (var catchClause in node.Catches)
+            {
+                var exType = "Exception";
+                var varName = "e";
+
+                if (catchClause.Declaration != null)
+                {
+                    exType = MapExceptionType(catchClause.Declaration.Type.ToString());
+                    if (catchClause.Declaration.Identifier.Text != "")
+                        varName = catchClause.Declaration.Identifier.Text;
+                }
+
+                var clause = new IRCatchClause { ExceptionType = exType, VariableName = varName };
+
+                tempMethod = new IRMethod("temp", "void");
+                _currentMethod = tempMethod;
+                _currentCatchVariableName = varName;
+                foreach (var stmt in catchClause.Block.Statements) Visit(stmt);
+                _currentCatchVariableName = null;
+                clause.Body = new List<IRStatement>(tempMethod.Body);
+                _currentMethod = previousMethod;
+
+                tryCatch.CatchClauses.Add(clause);
+            }
+
+            if (node.Finally != null)
+            {
+                tempMethod = new IRMethod("temp", "void");
+                _currentMethod = tempMethod;
+                foreach (var stmt in node.Finally.Block.Statements) Visit(stmt);
+                tryCatch.FinallyBody = new List<IRStatement>(tempMethod.Body);
+                _currentMethod = previousMethod;
+            }
+
+            _currentMethod.Body.Add(tryCatch);
+        }
+
+        public override void VisitThrowStatement(ThrowStatementSyntax node)
+        {
+            if (_currentMethod == null) return;
+
+            IRExpression? expr = null;
+            if (node.Expression != null)
+                expr = ParseExpression(node.Expression);
+            else if (_currentCatchVariableName != null)
+                expr = new IRVariable(_currentCatchVariableName, "Exception");
+
+            _currentMethod.Body.Add(new IRThrow(expr));
+        }
+
+        private static string MapExceptionType(string csharpType) => csharpType switch
+        {
+            "ArgumentException"          => "IllegalArgumentException",
+            "ArgumentNullException"      => "IllegalArgumentException",
+            "InvalidOperationException"  => "IllegalStateException",
+            "NotImplementedException"    => "UnsupportedOperationException",
+            "NotSupportedException"      => "UnsupportedOperationException",
+            "IndexOutOfRangeException"   => "ArrayIndexOutOfBoundsException",
+            "NullReferenceException"     => "NullPointerException",
+            "FormatException"            => "NumberFormatException",
+            "DivideByZeroException"      => "ArithmeticException",
+            "OverflowException"          => "ArithmeticException",
+            _                            => "Exception"
+        };
+
         private IRSwitchCase CreateSwitchCase(SwitchLabelSyntax label)
         {
             if (label is CaseSwitchLabelSyntax caseLabel)
@@ -629,7 +701,7 @@ namespace Transpilador.Parser
             {
                 var indexExpr = ParseExpression(elementAccess.ArgumentList.Arguments[0].Expression);
                 var listAccessType = MapTypeSymbol(_semanticModel.GetTypeInfo(elementAccess).Type);
-                return new IRMethodCall($"{elementAccess.Expression}.get", new List<IRExpression> { indexExpr }, listAccessType);
+                return new IRMethodCall($"{elementAccess.Expression}.get", [indexExpr], listAccessType);
             }
 
             var arrayExpression = ParseExpression(elementAccess.Expression);
@@ -653,11 +725,14 @@ namespace Transpilador.Parser
                     return new IRMethodCall($"{receiverText}.length", new List<IRExpression>(), "int");
             }
 
-            if (memberName == "Count" && IsListType(targetType))
-                return new IRMethodCall($"{receiverText}.size", new List<IRExpression>(), "int");
+if (memberName == "Count" && IsListType(targetType))
+    return new IRMethodCall($"{receiverText}.size", new List<IRExpression>(), "int");
 
-            if (receiverText == "Math" && (memberName == "PI" || memberName == "E"))
-                return new IRVariable($"Math.{memberName}", "double");
+if (receiverText == "Math" && (memberName == "PI" || memberName == "E"))
+    return new IRVariable($"Math.{memberName}", "double");
+
+if (memberName == "Message" && targetType?.Name.EndsWith("Exception") == true)
+    return new IRMethodCall($"{receiverText}.getMessage", new List<IRExpression>(), "String");
 
             throw new NotSupportedException($"Acceso de miembro no soportado: {memberAccess}");
         }
