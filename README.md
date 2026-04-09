@@ -55,13 +55,14 @@ Este proyecto se considera estable con el siguiente alcance.
 		- Lectura por índice: nums[i]
 		- Escritura por índice: nums[i] = x
 		- Tamaño: nums.Count
+	-Interfaz
+	-Polimorfismo
+	-Manejo de exepciones
+	-
 
 ### No Soportado
 
 - Colecciones avanzadas (Dictionary)
-- Interfaz
-- Polimorfismo
-- Manejo de erroes
 - Expresion de acceso
 - Dataset
 

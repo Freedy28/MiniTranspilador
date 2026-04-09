@@ -312,7 +312,7 @@ namespace Transpilador.Parser
             
             Visit(node.Statement);  // Visita el cuerpo del if
             
-            ifStmt.ThenBranch = new List<IRStatement>(tempMethod.Body);
+            ifStmt.ThenBranch = [.. tempMethod.Body];
             _currentMethod = previousMethod;
 
             // 3. Procesar el bloque 'else' si existe
@@ -323,7 +323,7 @@ namespace Transpilador.Parser
                 
                 Visit(node.Else.Statement);  // Visita el cuerpo del else
                 
-                ifStmt.ElseBranch = new List<IRStatement>(tempMethod.Body);
+                ifStmt.ElseBranch = [.. tempMethod.Body];
                 _currentMethod = previousMethod;
             }
 
@@ -343,7 +343,7 @@ namespace Transpilador.Parser
 
             Visit(node.Statement);
 
-            whileLoop.Body = new List<IRStatement>(tempMethod.Body);
+            whileLoop.Body = [.. tempMethod.Body];
             _currentMethod = previousMethod;
 
             _currentMethod.Body.Add(whileLoop);
@@ -379,7 +379,7 @@ namespace Transpilador.Parser
 
             Visit(node.Statement);
 
-            forLoop.Body = new List<IRStatement>(tempMethod.Body);
+            forLoop.Body = [.. tempMethod.Body];
             _currentMethod = previousMethod;
 
             _currentMethod.Body.Add(forLoop);
@@ -398,7 +398,7 @@ namespace Transpilador.Parser
 
             Visit(node.Statement);
 
-            doWhileLoop.Body = new List<IRStatement>(tempMethod.Body);
+            doWhileLoop.Body = [.. tempMethod.Body];
             _currentMethod = previousMethod;
 
             _currentMethod.Body.Add(doWhileLoop);
@@ -418,7 +418,7 @@ namespace Transpilador.Parser
 
             Visit(node.Statement);
 
-            foreachLoop.Body = new List<IRStatement>(tempMethod.Body);
+            foreachLoop.Body = [.. tempMethod.Body];
             _currentMethod = previousMethod;
 
             _currentMethod.Body.Add(foreachLoop);
@@ -445,7 +445,7 @@ namespace Transpilador.Parser
                         Visit(statement);
                     }
 
-                    switchCase.Body = new List<IRStatement>(tempMethod.Body);
+                    switchCase.Body = [.. tempMethod.Body];
                     _currentMethod = previousMethod;
 
                     switchStmt.Cases.Add(switchCase);
@@ -477,7 +477,7 @@ namespace Transpilador.Parser
             var tempMethod = new IRMethod("temp", "void");
             _currentMethod = tempMethod;
             foreach (var stmt in node.Block.Statements) Visit(stmt);
-            tryCatch.TryBody = new List<IRStatement>(tempMethod.Body);
+            tryCatch.TryBody = [.. tempMethod.Body];
             _currentMethod = previousMethod;
 
             foreach (var catchClause in node.Catches)
@@ -499,7 +499,7 @@ namespace Transpilador.Parser
                 _currentCatchVariableName = varName;
                 foreach (var stmt in catchClause.Block.Statements) Visit(stmt);
                 _currentCatchVariableName = null;
-                clause.Body = new List<IRStatement>(tempMethod.Body);
+                clause.Body = [.. tempMethod.Body];
                 _currentMethod = previousMethod;
 
                 tryCatch.CatchClauses.Add(clause);
@@ -510,7 +510,7 @@ namespace Transpilador.Parser
                 tempMethod = new IRMethod("temp", "void");
                 _currentMethod = tempMethod;
                 foreach (var stmt in node.Finally.Block.Statements) Visit(stmt);
-                tryCatch.FinallyBody = new List<IRStatement>(tempMethod.Body);
+                tryCatch.FinallyBody = [.. tempMethod.Body];
                 _currentMethod = previousMethod;
             }
 
